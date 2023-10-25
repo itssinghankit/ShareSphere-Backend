@@ -4,8 +4,19 @@ const express = require("express");
 const app = express();
 const mongoose = require("mongoose");
 const userRouter = require("./routes/userRoutes");
+const bodyParser = require("body-parser");
 
-app.use("/user",userRouter);
+app.use(express.json());
+// app.use(bodyParser.urlencoded({
+//     extended:true
+// }));
+
+app.use("/user", userRouter);
+
+
+app.get("/", (req, res) => {
+
+})
 
 mongoose.connect(process.env.MONGODB_SERVER_URL, {
     useNewUrlParser: true,
