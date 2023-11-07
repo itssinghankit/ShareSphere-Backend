@@ -2,30 +2,61 @@ require("dotenv").config();
 
 const express = require("express");
 const app = express();
-const mongoose = require("mongoose");
-const userRouter = require("./routes/userRoutes");
+const authRouter = require("./routes/authRoutes");
 const bodyParser = require("body-parser");
+const morgan = require("morgan");
+const createError = require("http-errors");
+
+require("./helpers/init_mongodb");
 
 app.use(express.json());
 // app.use(bodyParser.urlencoded({
 //     extended:true
 // }));
+app.use(morgan("dev"));
 
-app.use("/user", userRouter);
+app.use("/auth", authRouter);
 
 
 app.get("/", (req, res) => {
+res.send("helo from express");
+});
 
+// mongoose.connect(process.env.MONGODB_SERVER_URL, {
+//     useNewUrlParser: true,
+//     useUnifiedTopology: true
+// });
+/////////////////////////////////////////////////////////////////////
+
+//if any random route is hitted
+
+app.use(async (req, res, next) => {
+    next(createError.NotFound());
+});
+
+app.use(async (err, req, res, next) => {
+    res.status = err.status;
+    res.send({
+        error: {
+            status: err.status || 500,
+            message: err.message
+        }
+    })
 })
 
-mongoose.connect(process.env.MONGODB_SERVER_URL, {
-    useNewUrlParser: true,
-    useUnifiedTopology: true
-});
+
+
+////////////////////////////////////////////////////////////////////
 
 // to check if connection is succesful or not
 
-const conc = mongoose.connection;
-conc.on("open", () => {
-    app.listen("3000", () => { console.log("server started at port 3000 and db is connected") });
+const port = process.env.PORT || 3000;
+
+app.listen(port, () => {
+    console.log(`server started at port ${port}`);
 });
+
+// const conc = mongoose.connection;
+// conc.on("open", () => {
+//     app.listen("3000", () => { console.log("server started at port 3000 and db is connected") });
+// });
