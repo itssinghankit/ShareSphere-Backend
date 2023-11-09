@@ -9,7 +9,8 @@ const generateAccessToken = require("../middlewares/authentication.js");
 
 const createError = require("http-errors");
 const joi = require("joi");
-const joiAuthSchema = require("../helpers/validationSchema.js")
+const joiAuthSchema = require("../helpers/validationSchema.js");
+const { signAccessToken } = require("../helpers/jwtHelper.js");
 
 const signup = async (req, res, next) => {
 
@@ -29,7 +30,9 @@ const signup = async (req, res, next) => {
         const user = new userModel(result);
         const savedUser = await user.save();
 
-        res.status(201).json(req.body);
+        const accessToken = await signAccessToken(savedUser.id);
+
+        res.status(201).json({ email, password, accessToken });
 
     } catch (error) {
 
@@ -65,35 +68,56 @@ const signup = async (req, res, next) => {
     // }
 
 };
-const signin = async (req, res) => {
+const signin = async (req, res, next) => {
 
     const { email, password } = req.body;
 
     try {
-        const existingUser = await userModel.findOne({ email: email });
+        const result = await joiAuthSchema.validateAsync(req.body);
 
-        if (!existingUser) {
-            return res.status(404).json({ message: "user does not exist" });
-        }
+        const user = await userModel.findOne({ email: email });
 
-        const matchpassword = await bcrypt.compare(password, existingUser.password);
-        console.log(matchpassword);
+        if (!user) throw createError.NotFound("User not registered");
 
-        if (!matchpassword) {
-            return res.status(400).json({ message: "Invalid credentials" });
-        }
+        //we will use user not userModel as this.password will save in user by findOne() method
+        const isMatch = user.isValidPassword(result.password);
+        if (!isMatch) throw createError.Unauthorized("Invalid username/password");
 
-        const user = { email: email };
+        res.status(200).json(result);
 
-        const accessToken = generateAccessToken(user);
-        const refreshToken = jwt.sign(user, process.env.REFRESH_TOKEN_SECRET);
-        res.json({ email: email, password: password, accessToken: accessToken, refreshToken: refreshToken });
+    } catch (err) {
+        //if error is given by joi validation failure
+        if (err.isJoi === true) next(createError.BadRequest("Invalid username/password"));
 
-
-    } catch (error) {
-        console.log(error);
-        res.status(500).json({ message: "Something went wrong" });
+        //else other errors
+        next(err);
     }
+
+    // try {
+    //     const existingUser = await userModel.findOne({ email: email });
+
+    //     if (!existingUser) {
+    //         return res.status(404).json({ message: "user does not exist" });
+    //     }
+
+    //     const matchpassword = await bcrypt.compare(password, existingUser.password);
+    //     console.log(matchpassword);
+
+    //     if (!matchpassword) {
+    //         return res.status(400).json({ message: "Invalid credentials" });
+    //     }
+
+    //     const user = { email: email };
+
+    //     const accessToken = generateAccessToken(user);
+    //     const refreshToken = jwt.sign(user, process.env.REFRESH_TOKEN_SECRET);
+    //     res.json({ email: email, password: password, accessToken: accessToken, refreshToken: refreshToken });
+
+
+    // } catch (error) {
+    //     console.log(error);
+    //     res.status(500).json({ message: "Something went wrong" });
+    // }
 
 };
 
