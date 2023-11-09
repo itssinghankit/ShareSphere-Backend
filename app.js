@@ -9,7 +9,10 @@ const createError = require("http-errors");
 
 require("./helpers/init_mongodb");
 
+const { verifyAccessToken } = require("./helpers/jwtHelper")
+
 app.use(express.json());
+app.use(express.urlencoded({ extended: true }));
 // app.use(bodyParser.urlencoded({
 //     extended:true
 // }));
@@ -18,8 +21,8 @@ app.use(morgan("dev"));
 app.use("/auth", authRouter);
 
 
-app.get("/", (req, res) => {
-res.send("helo from express");
+app.get("/", verifyAccessToken, async (req, res, next) => {
+    res.send("helo from express");
 });
 
 // mongoose.connect(process.env.MONGODB_SERVER_URL, {

@@ -10,7 +10,7 @@ const generateAccessToken = require("../middlewares/authentication.js");
 const createError = require("http-errors");
 const joi = require("joi");
 const joiAuthSchema = require("../helpers/validationSchema.js");
-const { signAccessToken } = require("../helpers/jwtHelper.js");
+const { signAccessToken, signRefreshToken, verifyRefreshToken } = require("../helpers/jwtHelper.js");
 
 const signup = async (req, res, next) => {
 
@@ -30,9 +30,12 @@ const signup = async (req, res, next) => {
         const user = new userModel(result);
         const savedUser = await user.save();
 
+        //creating new access and refresh token
         const accessToken = await signAccessToken(savedUser.id);
+        const refreshToken = await signRefreshToken(savedUser.id);
 
-        res.status(201).json({ email, password, accessToken });
+
+        res.status(201).json({ email, password, accessToken, refreshToken });
 
     } catch (error) {
 
@@ -40,32 +43,6 @@ const signup = async (req, res, next) => {
         if (error.isJoi === true) error.status = 422
         next(error)
     }
-
-    // try {
-
-    // const existingUser = await userModel.findOne({ email: email });
-
-    // if (existingUser) {
-    //     return res.status(400).json({ message: "user already exist" });
-    // }
-
-    // const hashedPassword = await bcrypt.hash(password, 10);
-
-    // const result = await userModel.create({
-    //     email: email,
-    //     password: hashedPassword,
-    //     username: username
-    // });
-    // res.status(201).json(req.body);
-
-    // } catch (error) {
-    //     res.status(500).json({ message: "Something went wrong" });
-    // }
-
-    // if(result){
-    //     console.log(result);
-    //     res.json({message:"user created succesfully"});
-    // }
 
 };
 const signin = async (req, res, next) => {
@@ -80,10 +57,14 @@ const signin = async (req, res, next) => {
         if (!user) throw createError.NotFound("User not registered");
 
         //we will use user not userModel as this.password will save in user by findOne() method
-        const isMatch = user.isValidPassword(result.password);
+        const isMatch = await user.isValidPassword(result.password);
+
         if (!isMatch) throw createError.Unauthorized("Invalid username/password");
 
-        res.status(200).json(result);
+        const accessToken = await signAccessToken(user.id);
+        const refreshToken = await signRefreshToken(user.id);
+
+        res.status(200).json({ email, accessToken, refreshToken });
 
     } catch (err) {
         //if error is given by joi validation failure
@@ -93,43 +74,28 @@ const signin = async (req, res, next) => {
         next(err);
     }
 
-    // try {
-    //     const existingUser = await userModel.findOne({ email: email });
-
-    //     if (!existingUser) {
-    //         return res.status(404).json({ message: "user does not exist" });
-    //     }
-
-    //     const matchpassword = await bcrypt.compare(password, existingUser.password);
-    //     console.log(matchpassword);
-
-    //     if (!matchpassword) {
-    //         return res.status(400).json({ message: "Invalid credentials" });
-    //     }
-
-    //     const user = { email: email };
-
-    //     const accessToken = generateAccessToken(user);
-    //     const refreshToken = jwt.sign(user, process.env.REFRESH_TOKEN_SECRET);
-    //     res.json({ email: email, password: password, accessToken: accessToken, refreshToken: refreshToken });
-
-
-    // } catch (error) {
-    //     console.log(error);
-    //     res.status(500).json({ message: "Something went wrong" });
-    // }
-
 };
 
-const refreshToken = async (req, res) => {
+const refreshToken = async (req, res, next) => {
 
+    try {
+        const { refreshToken } = req.body;
+        
+        if (!refreshToken) next(createError.BadRequest);
+
+        const userId = await verifyRefreshToken(refreshToken);
+
+        //we can create new access and refresh token with this userId
+        const accToken = await signAccessToken(userId);
+        const refToken = await signRefreshToken(userId);
+
+        res.status(200).json({ accessToken: accToken, refreshToken: refToken });
+
+    } catch (error) {
+        next(error)
+    }
 };
 
 module.exports = { signup, signin, refreshToken };
 
-
-
-// customer -> app --> ro -> problem -> create ticket->
-// support  -> help --> temp access check-> access token support --> expire karana hai after 24hrs of deletion of ticket // access token store send
-// org -> req temp 
 
