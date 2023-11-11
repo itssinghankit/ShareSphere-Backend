@@ -2,37 +2,34 @@ require("dotenv").config();
 
 const express = require("express");
 const app = express();
-const authRouter = require("./routes/authRoutes");
-const bodyParser = require("body-parser");
-const morgan = require("morgan");
-const createError = require("http-errors");
 
+const bodyParser = require("body-parser");
+const createError = require("http-errors");
+const morgan = require("morgan");
+
+//for initializing mongodb
 require("./helpers/init_mongodb");
 
+//Routers
+const authRouter = require("./routes/authRoutes");
+
+//verification middleware
 const { verifyAccessToken } = require("./helpers/jwtHelper")
 
+//to parse the incoming json or form requests
 app.use(express.json());
 app.use(express.urlencoded({ extended: true }));
-// app.use(bodyParser.urlencoded({
-//     extended:true
-// }));
 app.use(morgan("dev"));
 
+//auth route for login signup
 app.use("/auth", authRouter);
 
-
+//home route to check if server is working fine
 app.get("/", verifyAccessToken, async (req, res, next) => {
     res.send("helo from express");
 });
 
-// mongoose.connect(process.env.MONGODB_SERVER_URL, {
-//     useNewUrlParser: true,
-//     useUnifiedTopology: true
-// });
-/////////////////////////////////////////////////////////////////////
-
-//if any random route is hitted
-
+//to create an error
 app.use(async (req, res, next) => {
     next(createError.NotFound());
 });
@@ -47,19 +44,9 @@ app.use(async (err, req, res, next) => {
     })
 })
 
-
-
-////////////////////////////////////////////////////////////////////
-
 // to check if connection is succesful or not
-
 const port = process.env.PORT || 3000;
 
 app.listen(port, () => {
     console.log(`server started at port ${port}`);
 });
-
-// const conc = mongoose.connection;
-// conc.on("open", () => {
-//     app.listen("3000", () => { console.log("server started at port 3000 and db is connected") });
-// });

@@ -1,15 +1,14 @@
 require("dotenv").config();
 
-const userModel = require("../models/userModel.js");
-const bcrypt = require("bcrypt");
 const express = require("express");
+const bcrypt = require("bcrypt");
 const jwt = require("jsonwebtoken");
-
-const generateAccessToken = require("../middlewares/authentication.js");
-
 const createError = require("http-errors");
 const joi = require("joi");
+
+const userModel = require("../models/userModel.js");
 const joiAuthSchema = require("../helpers/validationSchema.js");
+
 const { signAccessToken, signRefreshToken, verifyRefreshToken } = require("../helpers/jwtHelper.js");
 
 const signup = async (req, res, next) => {
@@ -18,11 +17,9 @@ const signup = async (req, res, next) => {
 
         const { email, password } = req.body;
 
-        // if (!username || !email || !password) throw createError.BadRequest();
-
         //checking with joi wheather the incoming data fields are valid or not with joi
-        const result = await joiAuthSchema.validateAsync(req.body);
 
+        const result = await joiAuthSchema.validateAsync(req.body);
         const doesExist = await userModel.findOne({ email: email });
 
         if (doesExist) throw createError.Conflict(`${email} is already registered`);
@@ -34,8 +31,7 @@ const signup = async (req, res, next) => {
         const accessToken = await signAccessToken(savedUser.id);
         const refreshToken = await signRefreshToken(savedUser.id);
 
-
-        res.status(201).json({ email, password, accessToken, refreshToken });
+        res.status(201).json({ email, accessToken, refreshToken });
 
     } catch (error) {
 
@@ -47,11 +43,10 @@ const signup = async (req, res, next) => {
 };
 const signin = async (req, res, next) => {
 
-    const { email, password } = req.body;
-
     try {
-        const result = await joiAuthSchema.validateAsync(req.body);
+        const { email, password } = req.body;
 
+        const result = await joiAuthSchema.validateAsync(req.body);
         const user = await userModel.findOne({ email: email });
 
         if (!user) throw createError.NotFound("User not registered");
