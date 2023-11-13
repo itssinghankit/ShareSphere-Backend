@@ -25,9 +25,14 @@ app.use(morgan("dev"));
 app.use("/auth", authRouter);
 
 //home route to check if server is working fine
-app.get("/",(req, res) => {
+app.get("/check", verifyAccessToken, async (req, res, next) => {
+    res.send("access token verified succesfully");
+});
+
+app.get("/", async (req, res) => {
     res.send("hello from express");
 });
+
 
 //to create an error
 app.use(async (req, res, next) => {
