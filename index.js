@@ -40,13 +40,11 @@ app.use(async (req, res, next) => {
 });
 
 app.use(async (err, req, res, next) => {
-    res.status = err.status;
-    res.send({
-        error: {
-            status: err.status || 500,
+    res.status(err.status).json({
+            code: err.status || 500,
             message: err.message
-        }
-    })
+        
+    });
 })
 
 // to check if connection is succesful or not
