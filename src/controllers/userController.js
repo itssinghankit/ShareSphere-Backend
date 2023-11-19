@@ -75,7 +75,7 @@ const refreshToken = async (req, res, next) => {
 
     try {
         const { refreshToken } = req.body;
-        
+
         if (!refreshToken) next(createError.BadRequest);
 
         const userId = await verifyRefreshToken(refreshToken);

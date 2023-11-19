@@ -19,6 +19,8 @@ const { verifyAccessToken } = require("./helpers/jwtHelper")
 //to parse the incoming json or form requests
 app.use(express.json());
 app.use(express.urlencoded({ extended: true }));
+
+//logger for requests
 app.use(morgan("dev"));
 
 //auth route for login signup
@@ -41,9 +43,9 @@ app.use(async (req, res, next) => {
 
 app.use(async (err, req, res, next) => {
     res.status(err.status).json({
-            code: err.status || 500,
-            message: err.message
-        
+        code: err.status || 500,
+        message: err.message
+
     });
 })
 
