@@ -6,4 +6,13 @@ const joiSignupSchema = Joi.object({
     username: Joi.string().required()
 });
 
-export {joiSignupSchema};
+//signinValidation for either username or email
+const joiSigninSchema = Joi.object({
+    usernameOrEmail: Joi.alternatives().try(
+        Joi.string().email().lowercase(),
+        Joi.string().min(3).max(30)
+    ).required(),
+    password: Joi.string().min(8).required(),
+})
+
+export { joiSignupSchema, joiSigninSchema };

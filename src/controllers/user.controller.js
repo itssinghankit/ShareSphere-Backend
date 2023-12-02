@@ -1,6 +1,6 @@
 import { userModel } from "../models/user.model.js";
 import { asyncHandler } from "../utils/asyncHandler.js";
-import { joiSignupSchema } from "../helpers/validationSchema.js";
+import { joiSigninSchema, joiSignupSchema } from "../helpers/validationSchema.js";
 import createError from "http-errors";
 import { ApiResponse } from "../utils/ApiResponse.js";
 
@@ -21,6 +21,7 @@ const signup = asyncHandler(async (req, res) => {
 
     const savedUser = await user.save();
 
+    //removing password field from found user
     const createdUser = await userModel.findById(user._id).select(
         "-password"
     );
@@ -32,13 +33,48 @@ const signup = asyncHandler(async (req, res) => {
     //attaching accessToken which is not in Schema
     const resWithTokens = {
         ...createdUser.toObject(),
-        accessToken:accessToken
+        accessToken: accessToken
     }
-    console.log(resWithTokens)
+
     return res.status(201).json(
         new ApiResponse(201, resWithTokens, "User registered Successfully")
     );
 
 })
 
-export { signup }
+const signin = asyncHandler(async (req, res) => {
+
+    const { usernameOrEmail } = req.body;
+
+    const result = await joiSigninSchema.validateAsync(req.body);
+
+    const user = await userModel.findOne({ $or: [{ email: usernameOrEmail }, { username: usernameOrEmail }] });
+    if (!user) throw createError.NotFound("User Not Registered");
+
+    const isPassMatch = await user.isPasswordCorrect(result.password);
+    if (!isPassMatch) throw createError.Unauthorized("Invalid Credentials");
+
+    const accessToken = user.generateAccessToken();
+
+    //removing password field from found user
+    const createdUser = await userModel.findById(user._id).select(
+        "-password"
+    );
+
+    if (!createdUser) {
+        throw createError.InternalServerError();
+    }
+
+    //attaching accessToken which is not in Schema
+    const resWithTokens = {
+        ...createdUser.toObject(),
+        accessToken: accessToken
+    }
+
+    return res.status(200).json(
+        new ApiResponse(200, resWithTokens, "Signed in Successfully")
+    );
+
+})
+
+export { signup, signin }
