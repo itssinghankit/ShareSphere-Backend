@@ -1,8 +1,9 @@
-// const joi = require("joi");
+import Joi from "joi";
 
-// const joiAuthSchema = joi.object({
-//     email: joi.string().email().lowercase().required(),
-//     password: joi.string().min(8).required()
-// });
+const joiSignupSchema = Joi.object({
+    email: Joi.string().email().lowercase().required(),
+    password: Joi.string().min(8).required(),
+    username: Joi.string().required()
+});
 
-// module.exports = joiAuthSchema;
+export {joiSignupSchema};
