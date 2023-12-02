@@ -22,7 +22,8 @@ const userSchema = new Schema({
     password: {
         type: String,
         required: true
-    },
+    }
+    ,
     fullName: {
         type: String,
         trim: true
@@ -61,7 +62,7 @@ const userSchema = new Schema({
 
 userSchema.pre("save", async function (next) {
     if (!this.isModified("password")) return next();
-    this.password = await bcrypt.hash(this.password, genSalt(10));
+    this.password = await bcrypt.hash(this.password,10);
     next();
 })
 

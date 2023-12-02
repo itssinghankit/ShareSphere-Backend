@@ -5,6 +5,7 @@ import { signup } from "../controllers/user.controller.js";
 
 const userRouter=Router();
 
-userRouter.route("/signup").post((req,res)=>signup);
+userRouter.post("/signup",signup)
+
     // upload[{name:"avatar",maxCount:1}]).fields(),
 export default userRouter;

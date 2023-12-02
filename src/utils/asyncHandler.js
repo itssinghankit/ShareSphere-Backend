@@ -1,7 +1,15 @@
-const asyncHandler=(requestHandlerFun)=>{
-    (req,res,next)=>{
-        Promise.resolve(requestHandlerFun(req,res,next)).catch((err)=>next(err))
+import createError from "http-errors";
+
+const asyncHandler = (requestHandlerFun) => {
+    return (req, res, next) => {
+        Promise.resolve(requestHandlerFun(req, res, next)).catch((err) => {
+          console.log(err);
+            if(err.status){
+            next(err);
+           }
+           next(createError.InternalServerError());
+        })
     }
 }
 
-export {asyncHandler}
+export { asyncHandler }
