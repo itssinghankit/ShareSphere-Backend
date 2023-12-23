@@ -4,6 +4,23 @@ import { joiSigninSchema, joiSignupSchema } from "../helpers/validationSchema.js
 import createError from "http-errors";
 import { ApiResponse } from "../utils/ApiResponse.js";
 
+const generateAccessAndRefreshTokens = async (userId) => {
+    try {
+        const user = await userModel.findById(userId);
+        const accessToken = user.generateAccessToken();
+        const refreshToken = user.generateRefreshToken();
+
+        user.refreshToken = refreshToken;
+        await user.save({ validateBeforeSave: false });
+
+        return { accessToken, refreshToken };
+
+    } catch (error) {
+        throw createError.InternalServerError("Something went wrong while generating access and refresh token");
+    }
+
+}
+
 const signup = asyncHandler(async (req, res) => {
 
     //taking email and username to check if user already exist
@@ -11,34 +28,33 @@ const signup = asyncHandler(async (req, res) => {
     const result = await joiSignupSchema.validateAsync(req.body);
 
     const doesExist = await userModel.findOne({ $or: [{ email }, { username }] });
-    if (doesExist) throw createError.Conflict(`${email} is already registered`);
+    if (doesExist) throw createError.Conflict("email or username is already registered");
 
     const user = new userModel(result);
+    await user.save();
 
     //creating new access and refresh token
-    const accessToken = await user.generateAccessToken();
-    user.refreshToken = await user.generateRefreshToken();
-
-    const savedUser = await user.save();
+    const { accessToken, refreshToken } = await generateAccessAndRefreshTokens(user._id);
 
     //removing password field from found user
-    const createdUser = await userModel.findById(user._id).select(
-        "-password"
-    );
+    const SignedupUser = await userModel.findById(user._id).select("-password -refreshToken");
 
-    if (!createdUser) {
+    if (!SignedupUser) {
         throw createError.InternalServerError();
     }
 
-    //attaching accessToken which is not in Schema
-    const resWithTokens = {
-        ...createdUser.toObject(),
-        accessToken: accessToken
+    const cookieOptions = {
+        httpOnly: true,
+        secure: true
     }
 
-    return res.status(201).json(
-        new ApiResponse(201, resWithTokens, "User registered Successfully")
-    );
+    //can also use this format ...SignedupUser.toObject()
+    return res.status(201)
+        .cookie("accessToken", accessToken, cookieOptions)
+        .cookie("refreshToken", refreshToken, cookieOptions)
+        .json(
+            new ApiResponse(201, { user: SignedupUser, accessToken, refreshToken }, "User registered Successfully")
+        );
 
 })
 
@@ -54,26 +70,27 @@ const signin = asyncHandler(async (req, res) => {
     const isPassMatch = await user.isPasswordCorrect(result.password);
     if (!isPassMatch) throw createError.Unauthorized("Invalid Credentials");
 
-    const accessToken = user.generateAccessToken();
+    const { accessToken, refreshToken } = await generateAccessAndRefreshTokens(user._id);
 
-    //removing password field from found user
-    const createdUser = await userModel.findById(user._id).select(
-        "-password"
-    );
+    //removing password and refresh field from logedin user
+    const logedinUser = await userModel.findById(user._id).select("-password -refreshToken");
 
-    if (!createdUser) {
+    if (!logedinUser) {
         throw createError.InternalServerError();
     }
 
-    //attaching accessToken which is not in Schema
-    const resWithTokens = {
-        ...createdUser.toObject(),
-        accessToken: accessToken
+    const cookieOptions = {
+        httpOnly: true,
+        secure: true
     }
 
-    return res.status(200).json(
-        new ApiResponse(200, resWithTokens, "Signed in Successfully")
-    );
+    //can also use this format ...logedinUser.toObject()
+    return res.status(200)
+        .cookie("accessToken", accessToken, cookieOptions)
+        .cookie("refreshToken", refreshToken, cookieOptions)
+        .json(
+            new ApiResponse(200, { user: logedinUser, accessToken, refreshToken }, "Signed in Successfully")
+        );
 
 })
 
