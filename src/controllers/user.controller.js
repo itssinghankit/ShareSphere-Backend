@@ -3,6 +3,7 @@ import { asyncHandler } from "../utils/asyncHandler.js";
 import { joiSigninSchema, joiSignupSchema } from "../helpers/validationSchema.js";
 import createError from "http-errors";
 import { ApiResponse } from "../utils/ApiResponse.js";
+import jwt from "jsonwebtoken";
 
 const generateAccessAndRefreshTokens = async (userId) => {
     try {
@@ -109,6 +110,42 @@ const logout = asyncHandler(async (req, res) => {
         .clearCookie("accessToken",cookieOptions)
         .clearCookie("refreshToken",cookieOptions)
         .json(new ApiResponse(200,{},"logged out successfully"));
+});
+
+const refreshAccessToken = asyncHandler(async(req,res)=>{
+    const incomingRefreshToken=req.cookies.refreshToken ||req.body.refreshToken;
+
+    if(!incomingRefreshToken){
+        throw createError.Unauthorized("Refresh Token Not Found");
+    }
+
+    try {
+        const decodedToken=jwt.verify(incomingRefreshToken,process.env.REFRESH_TOKEN_SECRET)
+    console.log(decodedToken)
+        const user= await userModel.findById(decodedToken?._id);
+        if(!user) throw createError.InternalServerError();
+        console.log(incomingRefreshToken)
+    console.log(user)
+        if(incomingRefreshToken!==user?.refreshToken){
+            throw createError.Unauthorized("Refresh Token expired");
+        }
+        
+        const { accessToken, refreshToken } = await generateAccessAndRefreshTokens(user._id);
+
+        user.refreshToken=refreshToken;
+        await user.save()
+        const cookieOptions={httpOnly:true,secure:true};
+    
+        res.status(200)
+        .clearCookie("accessToken",cookieOptions)
+        .clearCookie("refreshToken",cookieOptions)
+        .cookie("accessToken",accessToken)
+        .cookie("refeshToken",refreshToken)
+        .json(new ApiResponse(200,{accessToken,refreshToken},"Access Token Refreshed"));
+    
+    } catch (error) {
+        throw createError.Unauthorized(error?.message || "Invalid Refresh Token");
+    }
 })
 
-export { signup, signin, logout };
+export { signup, signin, logout, refreshAccessToken };
