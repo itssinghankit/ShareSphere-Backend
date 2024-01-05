@@ -94,4 +94,21 @@ const signin = asyncHandler(async (req, res) => {
 
 })
 
-export { signup, signin }
+const logout = asyncHandler(async (req, res) => {
+   await userModel.findByIdAndUpdate(
+    req.user._id,
+    { $unset: { refreshToken: 1 } }, // Use $unset to remove the refreshToken field
+    { new: true });
+
+        const cookieOptions = {
+            httpOnly: true,
+            secure: true
+        }  
+        
+        return res.status(200)
+        .clearCookie("accessToken",cookieOptions)
+        .clearCookie("refreshToken",cookieOptions)
+        .json(new ApiResponse(200,{},"logged out successfully"));
+})
+
+export { signup, signin, logout };

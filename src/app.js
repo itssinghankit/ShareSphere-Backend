@@ -31,7 +31,7 @@ app.use(async (req, res, next) => {
 });
 
 app.use(async (err, req, res, next) => {
-    res.status(err.status).json( new ApiError(err.status, err.message, err))
+    res.status(err.status).json( new ApiError(err.status, err.message, err));
 })
 
 export { app };
