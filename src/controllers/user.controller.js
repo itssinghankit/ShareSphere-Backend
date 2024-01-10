@@ -44,7 +44,7 @@ const maskMobile = (mobile) => {
     return "*".repeat(7) + mobile.toString().slice(-3);
 }
 
-const user=async(usernameOrEmailOrMobile)=>{
+const userDetails=async(usernameOrEmailOrMobile)=>{
 
     //checking if field is string->username or email
     if (typeof usernameOrEmailOrMobile === "string") {
@@ -58,7 +58,35 @@ const user=async(usernameOrEmailOrMobile)=>{
 }
 
 //for generating otp and hashed otp
+const generateOTPs =async()=>{
+     //creating the OTP
+     const OTP = Randomstring.generate({
+        length: 6,
+        charset: "numeric"
+    });
 
+    //hashing the otp
+    const hashedOTP = await bcrypt.hash(OTP, 10);
+
+    return {OTP,hashedOTP};
+}
+
+const saveForgetPassOTPs=async(user,hashedOTP)=>{
+   
+    //saving the email,mobile and otps to database
+    const doesExist = await forgetPassModel.findOne({ email:user.email });
+      
+    if (!doesExist) {
+        const otp = new forgetPassModel({
+            email: user.email,
+            otp: hashedOTP
+        });
+
+        await otp.save();
+    } else {
+       await forgetPassModel.findOneAndUpdate({ usernameOrEmailOrMobile }, { otp: hashedOTP });
+    }
+}
 
 const signup = asyncHandler(async (req, res) => {
 
@@ -292,19 +320,12 @@ const forgetPassDetails = asyncHandler(async (req, res) => {
 
     const result = await joiForgetPassDetails.validateAsync(req.body).catch(error => { throw createError.BadRequest(error.details[0].message) });
 
-    let user = "";
-    //checking if field is string->username or email
-    if (typeof usernameOrEmailOrMobile === "string") {
-        user = await userModel.findOne({ $or: [{ username: usernameOrEmailOrMobile }, { email: usernameOrEmailOrMobile }] });
-    } else {
-
-        //field is number means it is mobile
-        user = await userModel.findOne({ mobile: usernameOrEmailOrMobile });
-    }
+    const user = await userDetails(usernameOrEmailOrMobile);
 
     if (!user) {
         throw createError.NotFound("User Not Found");
     }
+
 
     //check if mobile field is present or not
     if (!user.mobile) {
@@ -342,9 +363,9 @@ const sendForgetPassOTP = asyncHandler(async (req, res) => {
 
     const { usernameOrEmailOrMobile, isEmail = false, isMobile = false } = req.body;
 
-    const result = await joiSendForgetPassOTP.validateAsync(req.body).catch(error => { throw createError.BadRequest(error.details[0].message) });
+    await joiSendForgetPassOTP.validateAsync(req.body).catch(error => { throw createError.BadRequest(error.details[0].message) });
 
-    let user = user(usernameOrEmailOrMobile);
+    const user = await userDetails(usernameOrEmailOrMobile);
     
     if (!user) {
         throw createError.NotFound("User Not Found");
@@ -354,25 +375,15 @@ const sendForgetPassOTP = asyncHandler(async (req, res) => {
         throw createError.BadRequest("Please Select Email or Mobile");
     }
 
-   
+   //otps
+   const {OTP,hashedOTP}=await generateOTPs();
 
     //user wants to send otp on email
     if (isEmail) {
 
-        //saving the email,mobile and otps to database
-        const doesExist = await forgetPassModel.findOne({ email:user.email });
-      
-        if (!doesExist) {
-            const otp = new forgetPassModel({
-                email: user.email,
-                otp: hashedOTP
-            });
-
-            await otp.save();
-        } else {
-           await forgetPassModel.findOneAndUpdate({ usernameOrEmailOrMobile }, { otp: hashedOTP });
-        }
-
+        //saving forget password otps
+        await saveForgetPassOTPs(user,hashedOTP);
+        
         //creating the otp email
         const subject = "ShareSphere Forget Password OTP Verification";
         const emailMessage = `The Forget Password OTP code is ${OTP}`;
