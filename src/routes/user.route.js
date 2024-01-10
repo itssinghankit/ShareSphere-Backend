@@ -2,7 +2,7 @@ import { Router } from "express";
 import { verifyJWT } from "../middlewares/auth.middleware.js";
 
 // import { upload } from "../middlewares/multer.middleware.js";
-import { logout, refreshAccessToken, signin, signup } from "../controllers/user.controller.js";
+import { details, logout, refreshAccessToken, sendOTP, signin, signup, verifyOTP } from "../controllers/user.controller.js";
 
 const userRouter=Router();
 
@@ -10,6 +10,15 @@ userRouter.post("/signup",signup);
 userRouter.post("/signin",signin);
 userRouter.post("/logout",verifyJWT,logout);
 userRouter.post("/refresh-token",refreshAccessToken);
+
+//for email otp sending and verification
+userRouter.post("/send-otp",verifyJWT,sendOTP);
+userRouter.post("/verify-otp",verifyJWT,verifyOTP);
+
+//for saving user details
+userRouter.post("/details",verifyJWT,details);
+
+// userRouter.post("/update-profile",verifyJWT,upload[{name:"avatar",maxCount:1}]).fields(),
 
     // upload[{name:"avatar",maxCount:1}]).fields(),
 export default userRouter;
