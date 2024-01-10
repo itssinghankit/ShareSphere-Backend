@@ -32,5 +32,16 @@ const joiForgetPassDetails = Joi.object({
     ).required()
 });
 
+//forgetPassSendOTP validation
+const joiSendForgetPassOTP = Joi.object({
+    usernameOrEmailOrMobile: Joi.alternatives().try(
+        Joi.string().min(1).email().lowercase(),
+        Joi.string().min(3).max(30),
+        Joi.number().integer().min(1111111111).max(9999999999)
+    ).required(),
+    isEmail: Joi.boolean(),
+    isMobile: Joi.boolean()
+});
+
 //TODO: add lowercase handling
-export { joiSignupSchema, joiSigninSchema, joiDetailsSchema, joiForgetPassDetails };
+export { joiSignupSchema, joiSigninSchema, joiDetailsSchema, joiForgetPassDetails, joiSendForgetPassOTP };

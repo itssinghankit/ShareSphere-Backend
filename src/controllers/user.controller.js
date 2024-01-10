@@ -1,6 +1,6 @@
 import { userModel } from "../models/user.model.js";
 import { asyncHandler } from "../utils/asyncHandler.js";
-import { joiDetailsSchema, joiForgetPassDetails, joiSigninSchema, joiSignupSchema } from "../helpers/validationSchema.js";
+import { joiDetailsSchema, joiForgetPassDetails, joiSendForgetPassOTP, joiSigninSchema, joiSignupSchema } from "../helpers/validationSchema.js";
 import createError from "http-errors";
 import { ApiResponse } from "../utils/ApiResponse.js";
 import jwt from "jsonwebtoken";
@@ -11,6 +11,7 @@ import { uploadOnCloudinary } from "../middlewares/cloudinary.middleware.js";
 import Randomstring from "randomstring";
 import { sendEmail } from "../utils/EmailSender.js";
 import { otpModel } from "../models/otp.model.js";
+import { forgetPassModel } from "../models/user.forgetPass.model.js";
 
 const generateAccessAndRefreshTokens = async (userId) => {
     try {
@@ -42,6 +43,22 @@ const maskEmail = (email) => {
 const maskMobile = (mobile) => {
     return "*".repeat(7) + mobile.toString().slice(-3);
 }
+
+const user=async(usernameOrEmailOrMobile)=>{
+
+    //checking if field is string->username or email
+    if (typeof usernameOrEmailOrMobile === "string") {
+        return await userModel.findOne({ $or: [{ username: usernameOrEmailOrMobile }, { email: usernameOrEmailOrMobile }] });
+    } else {
+
+        //field is number means it is mobile
+        return await userModel.findOne({ mobile: usernameOrEmailOrMobile });
+        // usernameOrEmailOrMobile = usernameOrEmailOrMobile.toString();
+    }
+}
+
+//for generating otp and hashed otp
+
 
 const signup = asyncHandler(async (req, res) => {
 
@@ -275,14 +292,14 @@ const forgetPassDetails = asyncHandler(async (req, res) => {
 
     const result = await joiForgetPassDetails.validateAsync(req.body).catch(error => { throw createError.BadRequest(error.details[0].message) });
 
-    let user="";
+    let user = "";
     //checking if field is string->username or email
     if (typeof usernameOrEmailOrMobile === "string") {
-         user = await userModel.findOne({ $or: [{ username: usernameOrEmailOrMobile }, { email: usernameOrEmailOrMobile }] });
-    }else{
+        user = await userModel.findOne({ $or: [{ username: usernameOrEmailOrMobile }, { email: usernameOrEmailOrMobile }] });
+    } else {
 
-    //field is number means it is mobile
-    user = await userModel.findOne({ mobile: usernameOrEmailOrMobile });
+        //field is number means it is mobile
+        user = await userModel.findOne({ mobile: usernameOrEmailOrMobile });
     }
 
     if (!user) {
@@ -323,14 +340,54 @@ const forgetPassDetails = asyncHandler(async (req, res) => {
 
 const sendForgetPassOTP = asyncHandler(async (req, res) => {
 
-    const {usernameOrEmailOrMobile, isEmail, isMobile} = req.body;
+    const { usernameOrEmailOrMobile, isEmail = false, isMobile = false } = req.body;
 
-    if(isEmail){
+    const result = await joiSendForgetPassOTP.validateAsync(req.body).catch(error => { throw createError.BadRequest(error.details[0].message) });
 
-        const user = await userModel.findOne({ email: usernameOrEmailOrMobile });
-        
+    let user = user(usernameOrEmailOrMobile);
+    
+    if (!user) {
+        throw createError.NotFound("User Not Found");
+    }
+
+    if(isEmail==false && isMobile==false){
+        throw createError.BadRequest("Please Select Email or Mobile");
+    }
+
+   
+
+    //user wants to send otp on email
+    if (isEmail) {
+
+        //saving the email,mobile and otps to database
+        const doesExist = await forgetPassModel.findOne({ email:user.email });
+      
+        if (!doesExist) {
+            const otp = new forgetPassModel({
+                email: user.email,
+                otp: hashedOTP
+            });
+
+            await otp.save();
+        } else {
+           await forgetPassModel.findOneAndUpdate({ usernameOrEmailOrMobile }, { otp: hashedOTP });
+        }
+
+        //creating the otp email
+        const subject = "ShareSphere Forget Password OTP Verification";
+        const emailMessage = `The Forget Password OTP code is ${OTP}`;
+
+        //sending the otps
+        await sendEmail(user.email, subject, emailMessage);
+
+        res.status(200).json(new ApiResponse(200, "OTP Sent to Email Successfully"));
+
+    }
+    else if (isMobile) {
+        console.log("mobile verification");
     }
     
+
 })
 
-export { signup, signin, logout, refreshAccessToken, sendOTP, verifyOTP, details, forgetPassDetails };
+export { signup, signin, logout, refreshAccessToken, sendOTP, verifyOTP, details, forgetPassDetails, sendForgetPassOTP };
