@@ -1,10 +1,11 @@
 import { userModel } from "../models/user.model.js";
 import { asyncHandler } from "../utils/asyncHandler.js";
-import { joiSigninSchema, joiSignupSchema } from "../helpers/validationSchema.js";
+import { joiDetailsSchema, joiForgetPassDetails, joiSigninSchema, joiSignupSchema } from "../helpers/validationSchema.js";
 import createError from "http-errors";
 import { ApiResponse } from "../utils/ApiResponse.js";
 import jwt from "jsonwebtoken";
 import bcrypt from "bcrypt";
+import { uploadOnCloudinary } from "../middlewares/cloudinary.middleware.js";
 
 //for generation of otp
 import Randomstring from "randomstring";
@@ -26,6 +27,20 @@ const generateAccessAndRefreshTokens = async (userId) => {
         throw createError.InternalServerError("Something went wrong while generating access and refresh token");
     }
 
+}
+
+//for masking email
+const maskEmail = (email) => {
+    const atIndex = email.indexOf("@");
+    const localPart = email.substring(0, atIndex);
+    const maskedLocalPart = "*".repeat(localPart.length - 3) + localPart.slice(-3);
+    const domain = email.substring(atIndex); // Keep the domain part as it is
+
+    return maskedLocalPart + domain;
+}
+
+const maskMobile = (mobile) => {
+    return "*".repeat(7) + mobile.toString().slice(-3);
 }
 
 const signup = asyncHandler(async (req, res) => {
@@ -162,8 +177,8 @@ const sendOTP = asyncHandler(async (req, res) => {
     const emailOTP = Randomstring.generate({
         length: 6,
         charset: "numeric"
-    }); 
-    
+    });
+
     const mobileOTP = Randomstring.generate({
         length: 6,
         charset: "numeric"
@@ -179,15 +194,15 @@ const sendOTP = asyncHandler(async (req, res) => {
     const doesExist = await otpModel.findOne({ email });
     if (!doesExist) {
         const otp = new otpModel({
-            email:email,
-            mobile:mobile,
-            emailOTP:hashedEmailOTP,
-            mobileOTP:hashedMobileOTP
+            email: email,
+            mobile: mobile,
+            emailOTP: hashedEmailOTP,
+            mobileOTP: hashedMobileOTP
         });
 
         await otp.save();
     } else {
-        const otp = await otpModel.findOneAndUpdate({ email }, { emailOTP:hashedEmailOTP, mobileOTP:hashedMobileOTP });
+        const otp = await otpModel.findOneAndUpdate({ email }, { emailOTP: hashedEmailOTP, mobileOTP: hashedMobileOTP });
     }
 
     //creating the otp email
@@ -210,8 +225,8 @@ const verifyOTP = asyncHandler(async (req, res) => {
     //either user is not applied for verification yet or it is already verified
     if (!userOTP) throw createError.BadRequest("Send OTP Request");
 
-    const isEmailVerified=await bcrypt.compare(emailOTP.toString(), userOTP.emailOTP);
-    const isMobileVerified=await bcrypt.compare(mobileOTP.toString(), userOTP.mobileOTP);
+    const isEmailVerified = await bcrypt.compare(emailOTP.toString(), userOTP.emailOTP);
+    const isMobileVerified = await bcrypt.compare(mobileOTP.toString(), userOTP.mobileOTP);
 
     if (!isEmailVerified || !isMobileVerified) throw createError.Conflict("Invalid OTP");
 
@@ -225,8 +240,97 @@ const verifyOTP = asyncHandler(async (req, res) => {
 });
 
 const details = asyncHandler(async (req, res) => {
-    
-    const {fullName,gender,dob,bio} = req.body;
+
+    //checks validation if failed then throws error else saves the details to result
+    const result = await joiDetailsSchema.validateAsync(req.body).catch(error => { throw createError.BadRequest(error.details[0].message) });
+
+    //uploading the avatar
+    const avatarLocalPath = req.file.path;
+
+    if (!avatarLocalPath) {
+        throw createError.NotFound("Avatar Not Found");
+    }
+
+    const avatar = await uploadOnCloudinary(avatarLocalPath);
+
+    if (!avatar) {
+        //didn't upload on cloudinary
+        throw createError.InternalServerError();
+    }
+
+    //using spread operator for efficiency
+    const user = await userModel.findOneAndUpdate({ email: req.user.email },
+        { ...result, avatar: avatar.url, isDetailsFilled: true },
+        { new: true }).select("-password -refreshToken");
+
+    //if user doesn't exist, then asynchanler will automatically generate internal server error
+
+    res.status(200).json(new ApiResponse(200, user, "Avatar Uploaded Successfully"));
+
 });
 
-export { signup, signin, logout, refreshAccessToken, sendOTP, verifyOTP, details };
+const forgetPassDetails = asyncHandler(async (req, res) => {
+
+    const usernameOrEmailOrMobile = req.body.usernameOrEmailOrMobile;
+
+    const result = await joiForgetPassDetails.validateAsync(req.body).catch(error => { throw createError.BadRequest(error.details[0].message) });
+
+    let user="";
+    //checking if field is string->username or email
+    if (typeof usernameOrEmailOrMobile === "string") {
+         user = await userModel.findOne({ $or: [{ username: usernameOrEmailOrMobile }, { email: usernameOrEmailOrMobile }] });
+    }else{
+
+    //field is number means it is mobile
+    user = await userModel.findOne({ mobile: usernameOrEmailOrMobile });
+    }
+
+    if (!user) {
+        throw createError.NotFound("User Not Found");
+    }
+
+    //check if mobile field is present or not
+    if (!user.mobile) {
+        const email = maskEmail(user.email);
+
+        const response = {
+            usernameOrEmailOrMobile,
+            email,
+            mobile: "",
+            isEmail: true,
+            isMobile: false
+
+        }
+        res.status(200).json(new ApiResponse(200, response));
+    }
+
+    //if mobile feild is also present
+    const email = maskEmail(user.email);
+    const mobile = maskMobile(user.mobile);
+
+    const response = {
+        usernameOrEmailOrMobile,
+        email,
+        mobile: mobile,
+        isEmail: true,
+        isMobile: true
+
+    }
+
+    res.status(200).json(new ApiResponse(200, response));
+
+});
+
+const sendForgetPassOTP = asyncHandler(async (req, res) => {
+
+    const {usernameOrEmailOrMobile, isEmail, isMobile} = req.body;
+
+    if(isEmail){
+
+        const user = await userModel.findOne({ email: usernameOrEmailOrMobile });
+        
+    }
+    
+})
+
+export { signup, signin, logout, refreshAccessToken, sendOTP, verifyOTP, details, forgetPassDetails };

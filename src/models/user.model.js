@@ -35,7 +35,8 @@ const userSchema = new Schema({
         index: true
     },
     gender: {
-        type: String
+        type: String,
+        lowercase:true
     },
     dob: {
         type: String
