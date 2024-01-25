@@ -23,6 +23,10 @@ app.use(cookieParser());
 //routes import
 import userRouter from "./routes/user.route.js";
 //routes
+app.get("/api/v1/", (req, res) => {
+    res.json({message:"Hello from backend"});
+});
+
 app.use("/api/v1/user", userRouter);
 
 //error generation
