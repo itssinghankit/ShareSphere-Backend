@@ -1,6 +1,6 @@
 import { userModel } from "../models/user.model.js";
 import { asyncHandler } from "../utils/asyncHandler.js";
-import { joiDetailsSchema, joiForgetPassDetails, joiSendForgetPassOTP, joiSigninSchema, joiSignupSchema } from "../helpers/validationSchema.js";
+import { joiDetailsSchema, joiForgetPassDetails, joiForgetPassVerify, joiSendForgetPassOTP, joiSigninSchema, joiSignupSchema } from "../helpers/validationSchema.js";
 import createError from "http-errors";
 import { ApiResponse } from "../utils/ApiResponse.js";
 import jwt from "jsonwebtoken";
@@ -46,7 +46,7 @@ const maskMobile = (mobile) => {
     return "*".repeat(7) + mobile.toString().slice(-3);
 }
 
-const userDetails=async(usernameOrEmailOrMobile)=>{
+const userDetails = async (usernameOrEmailOrMobile) => {
 
     //checking if field is string->username or email
     if (typeof usernameOrEmailOrMobile === "string") {
@@ -60,9 +60,9 @@ const userDetails=async(usernameOrEmailOrMobile)=>{
 }
 
 //for generating otp and hashed otp
-const generateOTPs =async()=>{
-     //creating the OTP
-     const OTP = Randomstring.generate({
+const generateOTPs = async () => {
+    //creating the OTP
+    const OTP = Randomstring.generate({
         length: 6,
         charset: "numeric"
     });
@@ -70,14 +70,14 @@ const generateOTPs =async()=>{
     //hashing the otp
     const hashedOTP = await bcrypt.hash(OTP, 10);
 
-    return {OTP,hashedOTP};
+    return { OTP, hashedOTP };
 }
 
-const saveForgetPassOTPs=async(user,hashedOTP)=>{
-   
+const saveForgetPassOTPs = async (user, hashedOTP) => {
+
     //saving the email,mobile and otps to database
-    const doesExist = await forgetPassModel.findOne({ email:user.email });
-      
+    const doesExist = await forgetPassModel.findOne({ email: user.email });
+
     if (!doesExist) {
         const otp = new forgetPassModel({
             email: user.email,
@@ -86,7 +86,7 @@ const saveForgetPassOTPs=async(user,hashedOTP)=>{
 
         await otp.save();
     } else {
-       await forgetPassModel.findOneAndUpdate({ usernameOrEmailOrMobile }, { otp: hashedOTP });
+        await forgetPassModel.findOneAndUpdate({ email: user.email }, { otp: hashedOTP });
     }
 }
 
@@ -94,7 +94,7 @@ const signup = asyncHandler(async (req, res) => {
 
     //taking email and username to check if user already exist
     const { email, username } = req.body;
-  
+
     const result = await joiSignupSchema.validateAsync(req.body);
 
     const doesExist = await userModel.findOne({ $or: [{ email }, { username }] });
@@ -189,7 +189,7 @@ const refreshAccessToken = asyncHandler(async (req, res) => {
     }
 
     try {
-        const decodedToken = jwt.verify(incomingRefreshToken, process.env.REFRESH_TOKEN_SECRET)
+        const decodedToken = jwt.verify(incomingRefreshToken, process.env.REFRESH_TOKEN_SECRET);
 
         const user = await userModel.findById(decodedToken?._id);
         if (!user) throw createError.InternalServerError();
@@ -292,8 +292,8 @@ const details = asyncHandler(async (req, res) => {
     //checks validation if failed then throws error else saves the details to result
     const result = await joiDetailsSchema.validateAsync(req.body).catch(error => { throw createError.BadRequest(error.details[0].message) });
 
-    const file= req.file;
-    const fileURI=getDataUri(file)
+    const file = req.file;
+    const fileURI = getDataUri(file)
 
     if (!fileURI) {
         throw createError.NotFound("Avatar Not Found");
@@ -321,7 +321,7 @@ const forgetPassDetails = asyncHandler(async (req, res) => {
 
     const usernameOrEmailOrMobile = req.body.usernameOrEmailOrMobile;
 
-    const result = await joiForgetPassDetails.validateAsync(req.body).catch(error => { throw createError.BadRequest(error.details[0].message) });
+    await joiForgetPassDetails.validateAsync(req.body).catch(error => { throw createError.BadRequest(error.details[0].message) });
 
     const user = await userDetails(usernameOrEmailOrMobile);
 
@@ -369,24 +369,24 @@ const sendForgetPassOTP = asyncHandler(async (req, res) => {
     await joiSendForgetPassOTP.validateAsync(req.body).catch(error => { throw createError.BadRequest(error.details[0].message) });
 
     const user = await userDetails(usernameOrEmailOrMobile);
-    
+
     if (!user) {
         throw createError.NotFound("User Not Found");
     }
 
-    if(isEmail==false && isMobile==false){
+    if (isEmail == false && isMobile == false) {
         throw createError.BadRequest("Please Select Email or Mobile");
     }
 
-   //otps
-   const {OTP,hashedOTP}=await generateOTPs();
+    //otps
+    const { OTP, hashedOTP } = await generateOTPs();
 
     //user wants to send otp on email
     if (isEmail) {
 
         //saving forget password otps
-        await saveForgetPassOTPs(user,hashedOTP);
-        
+        await saveForgetPassOTPs(user, hashedOTP);
+
         //creating the otp email
         const subject = "ShareSphere Forget Password OTP Verification";
         const emailMessage = `The Forget Password OTP code is ${OTP}`;
@@ -400,8 +400,49 @@ const sendForgetPassOTP = asyncHandler(async (req, res) => {
     else if (isMobile) {
         console.log("mobile verification");
     }
-    
 
-})
 
-export { signup, signin, logout, refreshAccessToken, sendOTP, verifyOTP, details, forgetPassDetails, sendForgetPassOTP };
+});
+
+const forgetPassVerify = asyncHandler(async (req, res) => {
+
+    const { usernameOrEmailOrMobile, otp, password } = req.body;
+
+    await joiForgetPassVerify.validateAsync(req.body).catch(error => { throw createError.BadRequest(error.details[0].message) });
+
+    const user = await userDetails(usernameOrEmailOrMobile);
+
+    if (!user) {
+        throw createError.NotFound("User Not Found");
+    }
+
+    const userOTP = await forgetPassModel.findOne({ email: user.email });
+
+    //either user is not applied for verification yet or it is already verified
+    if (!userOTP) throw createError.BadRequest("Send OTP Request");
+
+    const isOtpVerified = await bcrypt.compare(otp.toString(), userOTP.otp);
+
+    if (!isOtpVerified) throw createError.Conflict("Invalid OTP");
+
+    const hashedPassword = await bcrypt.hash(password, 10);
+    const updatedUser = await userModel.findOneAndUpdate({ email: user.email }, { password: hashedPassword }, { new: true }).select("-password -refreshToken");
+
+    //delete the otps from database
+    await forgetPassModel.findOneAndDelete({ email: user.email });
+
+    res.status(200).json(new ApiResponse(200, updatedUser, "Password changed successfully"));
+
+});
+
+const isUsernameAvailable = asyncHandler(async (req, res) => {
+   
+    const user = await userModel.findOne({ username: req.params.username });
+    if (!user) {
+        return res.status(200).json(new ApiResponse(200, { "available": true }, "Username Available"));
+    }
+    res.status(200).json(new ApiResponse(200, { "available": false }, "Username Not Available"));
+
+});
+
+export { signup, signin, logout, refreshAccessToken, sendOTP, verifyOTP, details, forgetPassDetails, sendForgetPassOTP, forgetPassVerify, isUsernameAvailable };
