@@ -32,6 +32,7 @@ const userSchema = new Schema({
         type: Number,
         trim: true,
         unique: true,
+        sparse: true,
         index: true
     },
     gender: {

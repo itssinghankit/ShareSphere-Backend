@@ -94,7 +94,7 @@ const signup = asyncHandler(async (req, res) => {
 
     //taking email and username to check if user already exist
     const { email, username } = req.body;
-    console.log(req.body)
+  
     const result = await joiSignupSchema.validateAsync(req.body);
 
     const doesExist = await userModel.findOne({ $or: [{ email }, { username }] });
