@@ -26,6 +26,9 @@ import userRouter from "./routes/user.route.js";
 app.get("/", (req, res) => {
     res.json({message:"Hello from backend"});
 });
+app.get("/api/v1", (req, res) => {
+    res.json({message:"Hello from v1 backend"});
+});
 
 app.use("/api/v1/user", userRouter);
 
