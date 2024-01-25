@@ -92,6 +92,7 @@ const signup = asyncHandler(async (req, res) => {
 
     //taking email and username to check if user already exist
     const { email, username } = req.body;
+    console.log(req.body)
     const result = await joiSignupSchema.validateAsync(req.body);
 
     const doesExist = await userModel.findOne({ $or: [{ email }, { username }] });
@@ -252,7 +253,7 @@ const sendOTP = asyncHandler(async (req, res) => {
 
     //creating the otp email
     const subject = "ShareSphere Email OTP Verification";
-    const emailMessage = `The email verification OTP code is ${emailOTP}`;
+    const emailMessage = `The email verification OTP code is ${emailOTP} and ${mobileOTP}`;
 
     //sending the otps
     await sendEmail(email, subject, emailMessage);
