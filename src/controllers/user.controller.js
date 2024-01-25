@@ -6,12 +6,14 @@ import { ApiResponse } from "../utils/ApiResponse.js";
 import jwt from "jsonwebtoken";
 import bcrypt from "bcrypt";
 import { uploadOnCloudinary } from "../middlewares/cloudinary.middleware.js";
+import { getDataUri } from "../utils/dataUri.js";
 
 //for generation of otp
 import Randomstring from "randomstring";
 import { sendEmail } from "../utils/EmailSender.js";
 import { otpModel } from "../models/otp.model.js";
 import { forgetPassModel } from "../models/user.forgetPass.model.js";
+
 
 const generateAccessAndRefreshTokens = async (userId) => {
     try {
@@ -290,14 +292,14 @@ const details = asyncHandler(async (req, res) => {
     //checks validation if failed then throws error else saves the details to result
     const result = await joiDetailsSchema.validateAsync(req.body).catch(error => { throw createError.BadRequest(error.details[0].message) });
 
-    //uploading the avatar
-    const avatarLocalPath = req.file.path;
+    const file= req.file;
+    const fileURI=getDataUri(file)
 
-    if (!avatarLocalPath) {
+    if (!fileURI) {
         throw createError.NotFound("Avatar Not Found");
     }
 
-    const avatar = await uploadOnCloudinary(avatarLocalPath);
+    const avatar = await uploadOnCloudinary(fileURI.content);
 
     if (!avatar) {
         //didn't upload on cloudinary
