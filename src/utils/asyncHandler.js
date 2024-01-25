@@ -7,7 +7,7 @@ const asyncHandler = (requestHandlerFun) => {
             if(err.status){
             next(err);
            }
-           next(createError.InternalServerError());
+           next(createError.InternalServerError(err.message));
         })
     }
 }
