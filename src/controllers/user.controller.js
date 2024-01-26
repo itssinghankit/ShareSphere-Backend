@@ -250,7 +250,14 @@ const sendOTP = asyncHandler(async (req, res) => {
 
         await otp.save();
     } else {
-        const otp = await otpModel.findOneAndUpdate({ email }, { emailOTP: hashedEmailOTP, mobileOTP: hashedMobileOTP });
+        /*The $set operator is used to update the values of specific fields
+         in a document without affecting other fields. 
+         If you omit $set, the entire document will be replaced with the update object, 
+         and Only the fields explicitly provided in the update object will be present 
+         in the updated document*/
+        /* mongoose findOneAndUpdate doesn't invoke pre() and post() function. */
+   
+        await otpModel.findOneAndUpdate({ email }, { $set:{emailOTP: hashedEmailOTP, mobileOTP: hashedMobileOTP} });
     }
 
     //creating the otp email
@@ -278,7 +285,7 @@ const verifyOTP = asyncHandler(async (req, res) => {
 
     if (!isEmailVerified || !isMobileVerified) throw createError.Conflict("Invalid OTP");
 
-    const updatedUser = await userModel.findOneAndUpdate({ email: req.user.email }, { isVerified: true, mobile: userOTP.mobile }, { new: true }).select("-password -refreshToken");
+    const updatedUser = await userModel.findOneAndUpdate({ email: req.user.email }, { $set:{isVerified: true, mobile: userOTP.mobile} }, { new: true }).select("-password -refreshToken");
 
     //delete the otps from database
     await otpModel.findOneAndDelete({ email: req.user.email });
@@ -425,13 +432,14 @@ const forgetPassVerify = asyncHandler(async (req, res) => {
 
     if (!isOtpVerified) throw createError.Conflict("Invalid OTP");
 
-    const hashedPassword = await bcrypt.hash(password, 10);
-    const updatedUser = await userModel.findOneAndUpdate({ email: user.email }, { password: hashedPassword }, { new: true }).select("-password -refreshToken");
+   //password will be automatically hashed using pre function
+    user.password = password;
+    user.save()
 
     //delete the otps from database
     await forgetPassModel.findOneAndDelete({ email: user.email });
 
-    res.status(200).json(new ApiResponse(200, updatedUser, "Password changed successfully"));
+    res.status(200).json(new ApiResponse(200, {}, "Password changed successfully"));
 
 });
 
