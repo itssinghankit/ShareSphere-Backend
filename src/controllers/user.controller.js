@@ -6,7 +6,7 @@ import { ApiResponse } from "../utils/ApiResponse.js";
 import jwt from "jsonwebtoken";
 import bcrypt from "bcrypt";
 import { uploadOnCloudinary } from "../middlewares/cloudinary.middleware.js";
-import { getDataUri } from "../utils/dataUri.js";
+import { getDataUri } from "../middlewares/dataUri.middleware.js";
 
 //for generation of otp
 import Randomstring from "randomstring";
