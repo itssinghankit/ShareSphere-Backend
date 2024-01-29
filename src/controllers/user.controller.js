@@ -454,3 +454,4 @@ const isUsernameAvailable = asyncHandler(async (req, res) => {
 });
 
 export { signup, signin, logout, refreshAccessToken, sendOTP, verifyOTP, details, forgetPassDetails, sendForgetPassOTP, forgetPassVerify, isUsernameAvailable };
+//use pre function for hashing of otps
