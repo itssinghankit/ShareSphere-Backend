@@ -1,6 +1,6 @@
 import { userModel } from "../models/user.model.js";
 import { asyncHandler } from "../utils/asyncHandler.js";
-import { joiDetailsSchema, joiForgetPassDetails, joiForgetPassVerify, joiSendForgetPassOTP, joiSigninSchema, joiSignupSchema } from "../helpers/validationSchema.js";
+import { joiDetailsSchema, joiForgetPassDetails, joiForgetPassVerify, joiSendForgetPassOTP, joiSigninSchema, joiSignupSchema, joiUpdateAvatarBio, joiUpdateDetails } from "../helpers/validationSchema.js";
 import createError from "http-errors";
 import { ApiResponse } from "../utils/ApiResponse.js";
 import jwt from "jsonwebtoken";
@@ -267,7 +267,7 @@ const sendOTP = asyncHandler(async (req, res) => {
     //sending the otps
     await sendEmail(email, subject, emailMessage);
 
-    res.status(200).json(new ApiResponse(200, {}, "OTP Sent Successfully"));
+    return res.status(200).json(new ApiResponse(200, {}, "OTP Sent Successfully"));
 
 });
 
@@ -290,7 +290,7 @@ const verifyOTP = asyncHandler(async (req, res) => {
     //delete the otps from database
     await otpModel.findOneAndDelete({ email: req.user.email });
 
-    res.status(200).json(new ApiResponse(200, updatedUser, "OTP Verified Successfully"));
+    return res.status(200).json(new ApiResponse(200, updatedUser, "OTP Verified Successfully"));
 
 });
 
@@ -315,12 +315,12 @@ const details = asyncHandler(async (req, res) => {
 
     //using spread operator for efficiency
     const user = await userModel.findOneAndUpdate({ email: req.user.email },
-        { ...result, avatar: avatar.url, isDetailsFilled: true },
+        {$set:{ ...result, avatar: avatar.url, isDetailsFilled: true }},
         { new: true }).select("-password -refreshToken");
 
     //if user doesn't exist, then asynchanler will automatically generate internal server error
 
-    res.status(200).json(new ApiResponse(200, user, "Avatar Uploaded Successfully"));
+    return res.status(200).json(new ApiResponse(200, user, "Avatar Uploaded Successfully"));
 
 });
 
@@ -349,7 +349,7 @@ const forgetPassDetails = asyncHandler(async (req, res) => {
             isMobile: false
 
         }
-        res.status(200).json(new ApiResponse(200, response));
+        return res.status(200).json(new ApiResponse(200, response));
     }
 
     //if mobile feild is also present
@@ -365,7 +365,7 @@ const forgetPassDetails = asyncHandler(async (req, res) => {
 
     }
 
-    res.status(200).json(new ApiResponse(200, response));
+    return res.status(200).json(new ApiResponse(200, response));
 
 });
 
@@ -401,7 +401,7 @@ const sendForgetPassOTP = asyncHandler(async (req, res) => {
         //sending the otps
         await sendEmail(user.email, subject, emailMessage);
 
-        res.status(200).json(new ApiResponse(200, "OTP Sent to Email Successfully"));
+        return res.status(200).json(new ApiResponse(200, "OTP Sent to Email Successfully"));
 
     }
     else if (isMobile) {
@@ -439,7 +439,7 @@ const forgetPassVerify = asyncHandler(async (req, res) => {
     //delete the otps from database
     await forgetPassModel.findOneAndDelete({ email: user.email });
 
-    res.status(200).json(new ApiResponse(200, {}, "Password changed successfully"));
+    return res.status(200).json(new ApiResponse(200, {}, "Password changed successfully"));
 
 });
 
@@ -449,9 +449,55 @@ const isUsernameAvailable = asyncHandler(async (req, res) => {
     if (!user) {
         return res.status(200).json(new ApiResponse(200, { "available": true }, "Username Available"));
     }
-    res.status(200).json(new ApiResponse(200, { "available": false }, "Username Not Available"));
+    return res.status(200).json(new ApiResponse(200, { "available": false }, "Username Not Available"));
 
 });
 
-export { signup, signin, logout, refreshAccessToken, sendOTP, verifyOTP, details, forgetPassDetails, sendForgetPassOTP, forgetPassVerify, isUsernameAvailable };
+//update constrolers
+const updateDetails = asyncHandler(async (req,res)=>{
+
+    const result=await joiUpdateDetails.validateAsync(req.body).catch(err=>{throw createError.BadRequest(err.details[0].message)});
+
+    const updatedUser=findOneAndUpdate({email:req.user.email},{$set:{result}},{new:true}).select("-password -refreshToken");
+
+   return res.status(200).json(new ApiResponse(200,updatedUser,"Details Updated successfully"));
+});
+
+const updateAvatarBio = asyncHandler(async(req,res)=>{
+   
+    const result=await joiUpdateAvatarBio.validateAsync(req.body()).catch(err=>{throw createError.BadRequest(err.details[0].message)});
+
+    const file = req.file;
+    const fileURI = getDataUri(file)
+
+    if (!fileURI) {
+        throw createError.NotFound("Avatar Not Found");
+    }
+
+    const avatar = await uploadOnCloudinary(fileURI.content);
+
+    if (!avatar) {
+        //didn't upload on cloudinary
+        throw createError.InternalServerError();
+    }
+
+    //using spread operator for efficiency
+    const updatedUser = await userModel.findByIdAndUpdate(req.user._id,
+        {$set:{ ...result, avatar: avatar.url}},
+        { new: true }).select("-password -refreshToken");
+
+    return res.status(200).json(new ApiResponse(200,updatedUser,"Updated Successfully"));
+
+});
+
+const updateUsername=asyncHandler(async(req,res)=>{
+
+});
+const updateEmail=asyncHandler(async(req,res)=>{
+
+});
+const updateMobile=asyncHandler(async(req,res)=>{
+
+});
+export { signup, signin, logout, refreshAccessToken, sendOTP, verifyOTP, details, forgetPassDetails, sendForgetPassOTP, forgetPassVerify, isUsernameAvailable,updateDetails,updateAvatarBio,updateEmail,updateMobile,updateUsername };
 //use pre function for hashing of otps

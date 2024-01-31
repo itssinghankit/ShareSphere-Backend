@@ -1,7 +1,7 @@
 import { Router } from "express";
 import { verifyJWT } from "../middlewares/auth.middleware.js";
 import { upload } from "../middlewares/multer.middleware.js";
-import { details, forgetPassDetails, logout, refreshAccessToken, sendOTP, signin, signup, verifyOTP,sendForgetPassOTP, forgetPassVerify, isUsernameAvailable } from "../controllers/user.controller.js";
+import { details, forgetPassDetails, logout, refreshAccessToken, sendOTP, signin, signup, verifyOTP,sendForgetPassOTP, forgetPassVerify, isUsernameAvailable, updateDetails, updateAvatarBio } from "../controllers/user.controller.js";
 
 const userRouter=Router();
 
@@ -22,5 +22,9 @@ userRouter.post("/details",verifyJWT,upload.single("avatar"),details);
 userRouter.post("/forget-pass-details",forgetPassDetails);
 userRouter.post("/send-forget-pass-otp",sendForgetPassOTP);
 userRouter.post("/forget-pass-verify",forgetPassVerify);
+
+//update routes
+userRouter.post("/updateDetalils",verifyJWT,updateDetails);
+userRouter.put("/updateAvatarBio",upload.single("avatar"),updateAvatarBio);
 
 export default userRouter;
