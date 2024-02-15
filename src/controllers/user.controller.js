@@ -1,6 +1,6 @@
 import { userModel } from "../models/user.model.js";
 import { asyncHandler } from "../utils/asyncHandler.js";
-import { joiDetailsSchema, joiForgetPassDetails, joiForgetPassVerify, joiSendForgetPassOTP, joiSigninSchema, joiSignupSchema, joiUpdateAvatarBio, joiUpdateDetails } from "../helpers/validationSchema.js";
+import { joiDetailsSchema, joiForgetPassDetails, joiForgetPassVerify, joiIsUsernameAvailable, joiSendForgetPassOTP, joiSigninSchema, joiSignupSchema, joiUpdateAvatarBio, joiUpdateDetails } from "../helpers/validationSchema.js";
 import createError from "http-errors";
 import { ApiResponse } from "../utils/ApiResponse.js";
 import jwt from "jsonwebtoken";
@@ -444,7 +444,7 @@ const forgetPassVerify = asyncHandler(async (req, res) => {
 });
 
 const isUsernameAvailable = asyncHandler(async (req, res) => {
-   
+    await joiIsUsernameAvailable.validateAsync(req.body).catch(error => { throw createError.BadRequest(error.details[0].message) });
     const user = await userModel.findOne({ username: req.params.username });
     if (!user) {
         return res.status(200).json(new ApiResponse(200, { "available": true }, "Username Available"));
