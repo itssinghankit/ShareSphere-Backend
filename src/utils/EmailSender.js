@@ -23,7 +23,7 @@ const sendEmail = async (email, subject, message) => {
     //sending the message
     await transporter.sendMail(mailOptions, (error, info) => {
         if (error) {
-            throw createError.InternalServerError(error.message)
+            throw createError.InternalServerError("An internal error occurred while sending the OTP")
         } else {
             console.log("Email sent: " + info.response);
         }

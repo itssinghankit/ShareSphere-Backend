@@ -13,6 +13,7 @@ import Randomstring from "randomstring";
 import { sendEmail } from "../utils/EmailSender.js";
 import { otpModel } from "../models/otp.model.js";
 import { forgetPassModel } from "../models/user.forgetPass.model.js";
+import { sendMessage } from "../utils/MobileMessageSender.js";
 
 
 const generateAccessAndRefreshTokens = async (userId) => {
@@ -232,11 +233,8 @@ const sendOTP = asyncHandler(async (req, res) => {
         charset: "numeric"
     });
 
-    //hashing the otps
-    const hashedEmailOTP = await bcrypt.hash(emailOTP, 10);
-    const hashedMobileOTP = await bcrypt.hash(mobileOTP, 10);
 
-    console.log(emailOTP, mobileOTP);
+    // console.log(emailOTP, mobileOTP);
 
     //saving the email,mobile and otps to database
     const doesExist = await otpModel.findOne({ email });
@@ -244,8 +242,8 @@ const sendOTP = asyncHandler(async (req, res) => {
         const otp = new otpModel({
             email: email,
             mobile: mobile,
-            emailOTP: hashedEmailOTP,
-            mobileOTP: hashedMobileOTP
+            emailOTP: emailOTP,
+            mobileOTP: mobileOTP
         });
 
         await otp.save();
@@ -257,15 +255,19 @@ const sendOTP = asyncHandler(async (req, res) => {
          in the updated document*/
         /* mongoose findOneAndUpdate doesn't invoke pre() and post() function. */
    
-        await otpModel.findOneAndUpdate({ email }, { $set:{emailOTP: hashedEmailOTP, mobileOTP: hashedMobileOTP} });
+        await otpModel.findOneAndUpdate({ email }, { $set:{emailOTP: emailOTP, mobileOTP: mobileOTP} });
     }
 
     //creating the otp email
     const subject = "ShareSphere Email OTP Verification";
-    const emailMessage = `The email verification OTP code is ${emailOTP} and ${mobileOTP}`;
+    const emailMessage = `The email verification OTP code is ${emailOTP}`;
 
     //sending the otps
     await sendEmail(email, subject, emailMessage);
+
+    //creating and sending the mobile otp message using twilio
+    const mobileMessage=`OTP for your ShareSphere Application is ${mobileOTP}`
+    await sendMessage(mobile,mobileMessage);
 
     return res.status(200).json(new ApiResponse(200, {}, "OTP Sent Successfully"));
 
@@ -499,5 +501,8 @@ const updateEmail=asyncHandler(async(req,res)=>{
 const updateMobile=asyncHandler(async(req,res)=>{
 
 });
+
+
 export { signup, signin, logout, refreshAccessToken, sendOTP, verifyOTP, details, forgetPassDetails, sendForgetPassOTP, forgetPassVerify, isUsernameAvailable,updateDetails,updateAvatarBio,updateEmail,updateMobile,updateUsername };
 //use pre function for hashing of otps
+

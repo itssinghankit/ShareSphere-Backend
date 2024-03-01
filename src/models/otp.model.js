@@ -1,4 +1,5 @@
 import mongoose from "mongoose";
+import bcrypt from "bcrypt";
 
 const otpSchema = new mongoose.Schema({
     email:{
@@ -20,6 +21,12 @@ const otpSchema = new mongoose.Schema({
         type:String,
         required:true
     }
+});
+
+otpSchema.pre("save", async function (next) {
+   this.mobileOTP=await bcrypt.hash(this.mobileOTP,10);
+   this.emailOTP=await bcrypt.hash(this.emailOTP,10);
+    next();
 });
 
 export const otpModel = mongoose.model("Otp", otpSchema);
