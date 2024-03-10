@@ -90,7 +90,7 @@ const saveOTPs = async (modelName, model, email) => {
         await otp.save();
     } else {
         const hashedOtp=await bcrypt.hash(model.otp,10);
-        await modelName.findOneAndUpdate({email}, {otp:hashedOtp});
+        await modelName.findOneAndUpdate({email}, {$set:{otp:hashedOtp}});
     }
 }
 
@@ -275,7 +275,9 @@ const sendOTP = asyncHandler(async (req, res) => {
          in the updated document*/
         /* mongoose findOneAndUpdate doesn't invoke pre() and post() function. */
 
-        await otpModel.findOneAndUpdate({ email }, { $set: { emailOTP: emailOTP, mobileOTP: mobileOTP } });
+        const hashedMobileOtp=await bcrypt.hash(mobileOTP,10);
+        const hashedEmailOtp=await bcrypt.hash(emailOTP,10);
+        await otpModel.findOneAndUpdate({ email }, { $set: { emailOTP: hashedEmailOtp, mobileOTP: hashedMobileOtp } });
     }
 
     //creating the otp email
