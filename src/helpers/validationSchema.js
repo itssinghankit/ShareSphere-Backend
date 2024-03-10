@@ -47,7 +47,7 @@ const joiSendForgetPassOTP = Joi.object({
 const joiForgetPassVerify = Joi.object({
     usernameOrEmailOrMobile: Joi.alternatives().try(
         Joi.string().min(1).email().lowercase(),
-        Joi.string().min(3).max(30),
+        Joi.string().alphanum().min(3).max(20),
         Joi.number().integer().min(1111111111).max(9999999999)
     ).required(),
     otp: Joi.number().required(),
@@ -67,9 +67,20 @@ const joiUpdateAvatarBio=Joi.object({
 });
 
 //isUsernameAvailable validation
-const joiIsUsernameAvailable = Joi.object({
-    username:Joi.string().alphanum().min(3).required()
-})
+const joiUpdateUsername = Joi.object({
+    username:Joi.string().alphanum().min(3).max(20).required()
+});
+
+//updateEmailSendOtp validation
+const joiUpdateEmailSendOtp =Joi.object({
+    newEmail:Joi.string().email().lowercase().required()
+});
+
+//updateEmailVerifyOtp validation
+const joiUpdateEmailVerifyOtp = Joi.object({
+    otp:Joi.string().length(6).pattern(/^\d{6}$/).required()
+});
+
 
 //TODO: add lowercase handling
-export { joiSignupSchema, joiSigninSchema, joiDetailsSchema, joiForgetPassDetails, joiSendForgetPassOTP, joiForgetPassVerify,joiUpdateDetails, joiUpdateAvatarBio, joiIsUsernameAvailable };
+export { joiSignupSchema, joiSigninSchema, joiDetailsSchema, joiForgetPassDetails, joiSendForgetPassOTP, joiForgetPassVerify,joiUpdateDetails, joiUpdateAvatarBio, joiUpdateUsername, joiUpdateEmailSendOtp,joiUpdateEmailVerifyOtp};

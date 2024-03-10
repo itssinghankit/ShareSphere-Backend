@@ -15,4 +15,6 @@ const forgetPassSchema = new mongoose.Schema({
     }
 });
 
+
+
 export const forgetPassModel = mongoose.model("ForgetPassOtp", forgetPassSchema);
