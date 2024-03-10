@@ -67,6 +67,11 @@ const joiUpdateAvatarBio=Joi.object({
 });
 
 //isUsernameAvailable validation
+const joiIsUsernameAvailable = Joi.object({
+    username:Joi.string().alphanum().min(3).max(20).required()
+});
+
+//joiUpdateUsername validation
 const joiUpdateUsername = Joi.object({
     username:Joi.string().alphanum().min(3).max(20).required()
 });
@@ -83,4 +88,4 @@ const joiUpdateEmailVerifyOtp = Joi.object({
 
 
 //TODO: add lowercase handling
-export { joiSignupSchema, joiSigninSchema, joiDetailsSchema, joiForgetPassDetails, joiSendForgetPassOTP, joiForgetPassVerify,joiUpdateDetails, joiUpdateAvatarBio, joiUpdateUsername, joiUpdateEmailSendOtp,joiUpdateEmailVerifyOtp};
+export { joiSignupSchema, joiSigninSchema, joiDetailsSchema, joiForgetPassDetails, joiSendForgetPassOTP, joiForgetPassVerify,joiUpdateDetails, joiUpdateAvatarBio, joiUpdateUsername, joiUpdateEmailSendOtp,joiUpdateEmailVerifyOtp,joiIsUsernameAvailable};
