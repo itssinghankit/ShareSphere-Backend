@@ -5,7 +5,7 @@ import { userModel } from "../models/user.model.js"
 
 export const verifyJWT = asyncHandler(async (req, res, next) => {
     
-    const token = req.cookies?.accessToken || req.header("Authorization")?.replace("Bearer ", "");
+    const token =  req.header("Authorization")?.replace("Bearer ", "") || req.cookies?.accessToken;
     
     if (!token) {
         throw createError.Unauthorized("Token Not found");
