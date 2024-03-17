@@ -19,7 +19,7 @@ const joiSigninSchema = Joi.object({
 const joiDetailsSchema = Joi.object({
     fullName: Joi.string().min(1).required(),
     gender: Joi.alternatives().try("male", "female", "other").required(),
-    dob: Joi.string().min(1).required(),
+    dob: Joi.date().required(),
     bio: Joi.string().min(1).required()
 });
 
@@ -86,6 +86,10 @@ const joiUpdateEmailVerifyOtp = Joi.object({
     otp:Joi.string().length(6).pattern(/^\d{6}$/).required()
 });
 
+const joiDate=Joi.object({
+    date:Joi.date().required()
+});
+
 
 //TODO: add lowercase handling
-export { joiSignupSchema, joiSigninSchema, joiDetailsSchema, joiForgetPassDetails, joiSendForgetPassOTP, joiForgetPassVerify,joiUpdateDetails, joiUpdateAvatarBio, joiUpdateUsername, joiUpdateEmailSendOtp,joiUpdateEmailVerifyOtp,joiIsUsernameAvailable};
+export { joiSignupSchema, joiSigninSchema, joiDetailsSchema, joiForgetPassDetails, joiSendForgetPassOTP, joiForgetPassVerify,joiUpdateDetails, joiUpdateAvatarBio, joiUpdateUsername, joiUpdateEmailSendOtp,joiUpdateEmailVerifyOtp,joiIsUsernameAvailable,joiDate};

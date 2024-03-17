@@ -19,6 +19,7 @@ app.use(cookieParser());
 
 //routes import
 import userRouter from "./routes/user.route.js";
+import cyberStrikeRouter from "./routes/cyberstrike.route.js";
 //routes
 app.get("/", (req, res) => {
     res.json({message:"Hello from backend"});
@@ -28,6 +29,7 @@ app.get("/api/v1", (req, res) => {
 });
 
 app.use("/api/v1/user", userRouter);
+app.use("/api/v1/blog", cyberStrikeRouter);
 
 //error generation
 app.use(async (req, res, next) => {

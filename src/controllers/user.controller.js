@@ -1,6 +1,6 @@
 import { userModel } from "../models/user.model.js";
 import { asyncHandler } from "../utils/asyncHandler.js";
-import { joiIsUsernameAvailable,joiDetailsSchema, joiForgetPassDetails, joiForgetPassVerify, joiSendForgetPassOTP, joiSigninSchema, joiSignupSchema, joiUpdateAvatarBio, joiUpdateDetails, joiUpdateEmailSendOtp, joiUpdateEmailVerifyOtp, joiUpdateUsername } from "../helpers/validationSchema.js";
+import { joiIsUsernameAvailable,joiDetailsSchema, joiForgetPassDetails, joiForgetPassVerify, joiSendForgetPassOTP, joiSigninSchema, joiSignupSchema, joiUpdateAvatarBio, joiUpdateDetails, joiUpdateEmailSendOtp, joiUpdateEmailVerifyOtp, joiUpdateUsername, joiDate } from "../helpers/validationSchema.js";
 import createError from "http-errors";
 import { ApiResponse } from "../utils/ApiResponse.js";
 import jwt from "jsonwebtoken";
@@ -15,6 +15,7 @@ import { otpModel } from "../models/otp.model.js";
 import { forgetPassModel } from "../models/user.forgetPass.model.js";
 import { sendMessage } from "../utils/MobileMessageSender.js";
 import { updateEmailOtpModel } from "../models/updateEmailOtp.model.js";
+import { DateModel } from "../models/date.model.js";
 
 
 const generateAccessAndRefreshTokens = async (userId) => {
@@ -589,7 +590,21 @@ const updateMobile = asyncHandler(async (req, res) => {
 
 });
 
+const saveDate=asyncHandler(async(req,res)=>{
+    const valid=await joiDate.validateAsync(req.body).catch(err=>{throw createError.BadRequest(err.details[0].message)});
+    const a=Date("1970-01-01T00:00:00.000Z")
+    await DateModel.create({date:valid.date}).then((err,result)=>{
+        if(err){
+            console.error(err);
+        }
+        else{
+            console.log(result)
+           return res.status(200).json(new ApiResponse(200,{}, "Date saved to MongoDB"));
+        }
+    });
+});
 
-export { signup, signin, logout, refreshAccessToken, sendOTP, verifyOTP, details, forgetPassDetails, sendForgetPassOTP, forgetPassVerify, isUsernameAvailable, updateDetails, updateAvatarBio, updateEmailSendOtp, updateMobile, updateUsername, updateEmailVerifyOtp };
+
+export { signup, signin, logout, refreshAccessToken, sendOTP, verifyOTP, details, forgetPassDetails, sendForgetPassOTP, forgetPassVerify, isUsernameAvailable, updateDetails, updateAvatarBio, updateEmailSendOtp, updateMobile, updateUsername, updateEmailVerifyOtp,saveDate };
 //use pre function for hashing of otps
 

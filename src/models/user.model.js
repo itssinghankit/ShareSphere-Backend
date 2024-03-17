@@ -40,7 +40,7 @@ const userSchema = new Schema({
         lowercase:true
     },
     dob: {
-        type: String
+        type: Date
     },
     bio: {
         type: String,

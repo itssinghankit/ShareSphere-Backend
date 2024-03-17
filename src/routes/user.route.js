@@ -1,7 +1,7 @@
 import { Router } from "express";
 import { verifyJWT } from "../middlewares/auth.middleware.js";
 import { upload } from "../middlewares/multer.middleware.js";
-import { details, forgetPassDetails, logout, refreshAccessToken, sendOTP, signin, signup, verifyOTP, sendForgetPassOTP, forgetPassVerify, isUsernameAvailable, updateUsername, updateDetails, updateAvatarBio, updateEmailSendOtp, updateEmailVerifyOtp } from "../controllers/user.controller.js";
+import { details, forgetPassDetails, logout, refreshAccessToken, sendOTP, signin, signup, verifyOTP, sendForgetPassOTP, forgetPassVerify, isUsernameAvailable, updateUsername, updateDetails, updateAvatarBio, updateEmailSendOtp, updateEmailVerifyOtp, saveDate } from "../controllers/user.controller.js";
 
 const userRouter = Router();
 
@@ -29,5 +29,8 @@ userRouter.patch("/updateAvatarBio", upload.single("avatar"), updateAvatarBio);
 userRouter.patch("/update-username", verifyJWT, updateUsername);
 userRouter.post("/update-email-send-otp", verifyJWT, updateEmailSendOtp);
 userRouter.patch("/update-email-verify-otp", verifyJWT, updateEmailVerifyOtp);
+
+//tutorial
+userRouter.post("/date",saveDate);
 
 export default userRouter;
