@@ -6,11 +6,9 @@ import ApiError from "./utils/ApiError.js";
 
 const app = express();
 const corsConfig={
-    origin: "*",
-    credentials: true,
-    methods: ["GET", "POST", "PUT", "PATCH", "DELETE"]
+    origin: process.env.CORS_ORIGIN,
+    credentials: true
 };
-app.options("", corsConfig);
 app.use(cors(corsConfig));
 
 app.use(express.json({ limit: "16kb" }))
@@ -29,7 +27,6 @@ app.get("/api/v1", (req, res) => {
 });
 
 app.use("/api/v1/user", userRouter);
-app.use("/api/v1/blog", cyberStrikeRouter);
 
 //error generation
 app.use(async (req, res, next) => {

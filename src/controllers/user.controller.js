@@ -4,7 +4,7 @@ import { joiIsUsernameAvailable,joiDetailsSchema, joiForgetPassDetails, joiForge
 import createError from "http-errors";
 import { ApiResponse } from "../utils/ApiResponse.js";
 import jwt from "jsonwebtoken";
-import bcrypt from "bcrypt";
+import bcrypt from "bcryptjs";
 import { uploadOnCloudinary } from "../middlewares/cloudinary.middleware.js";
 import { getDataUri } from "../middlewares/dataUri.middleware.js";
 
