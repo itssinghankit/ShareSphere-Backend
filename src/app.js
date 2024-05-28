@@ -19,7 +19,6 @@ app.use(cookieParser());
 
 //routes import
 import userRouter from "./routes/user.route.js";
-import cyberStrikeRouter from "./routes/cyberstrike.route.js";
 //routes
 app.get("/", (req, res) => {
     res.json({message:"Hello from backend"});
