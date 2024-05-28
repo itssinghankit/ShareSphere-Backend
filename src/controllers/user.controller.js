@@ -243,7 +243,13 @@ const sendOTP = asyncHandler(async (req, res) => {
     const email = req.user.email;
     const mobile = req.body.mobile;
 
-    //creating the email and mobile OTPs
+    //check if the given mobile number already exist or not
+    const isUserExist = await userModel.findOne({mobile});
+    if(isUserExist){
+        throw createError.Conflict("Mobile number already registered");
+    }
+
+    //creating the email and mobile OTPs 
     const emailOTP = Randomstring.generate({
         length: 6,
         charset: "numeric"
