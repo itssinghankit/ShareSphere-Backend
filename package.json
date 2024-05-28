@@ -4,9 +4,11 @@
   "description": "ShareSphere Backend",
   "main": "src/index.js",
   "type": "module",
-  
+  "engines": {
+    "node": "18.x"
+  },
   "scripts": {
-    "dev": "node -r dotenv/config --experimental-json-modules src/index.js",
+    "dev": "nodemon -r dotenv/config --experimental-json-modules src/index.js",
     "server": "node -r dotenv/config --experimental-json-modules src/index.js"
   },
   "repository": {

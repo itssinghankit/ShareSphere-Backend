@@ -5,12 +5,13 @@ import createError from "http-errors";
 import ApiError from "./utils/ApiError.js";
 
 const app = express();
-
-app.use(cors({
-    origin: process.env.CORS_ORIGIN,
+const corsConfig={
+    origin: "*",
     credentials: true,
-    // limit:"16kb"
-}));
+    methods: ["GET", "POST", "PUT", "PATCH", "DELETE"]
+};
+app.options("*", corsConfig);
+app.use(cors(corsConfig));
 
 app.use(express.json({ limit: "16kb" }))
 app.use(express.urlencoded({ extended: true, limit: "16kb" }))
