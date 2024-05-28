@@ -1,6 +1,5 @@
 import Nodemailer from "nodemailer";
 import createError from "http-errors";
-import { asyncHandler } from "./asyncHandler.js";
 
 const transporter = Nodemailer.createTransport({
     service: "gmail",
@@ -14,7 +13,7 @@ const transporter = Nodemailer.createTransport({
 const sendEmail = async (email, subject, message) => {
 
     const mailOptions = {
-        from: {name: "ShareSphere", address:email},
+        from: {name: "ShareSphere", address:process.env.NODEMAILER_EMAIL},
         to: email,
         subject: subject,
         text: message
