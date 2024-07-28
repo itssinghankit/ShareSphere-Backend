@@ -7,7 +7,7 @@ import { verifyJWT } from "../middlewares/auth.middleware.js";
 const postRouter = Router();
 
 postRouter.get("/", (req, res) => {
-    res.json({message:"Hello from posting jj route"});
+    res.json({message:"Hello from posting route"});
 });
 
 postRouter.post("/save-post", verifyJWT, upload.array("postImages", 10), savePost)
