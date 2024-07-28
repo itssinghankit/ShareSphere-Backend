@@ -8,4 +8,12 @@ const joiLikePost = Joi.object({
     postId: Joi.objectId().required()
 });
 
-export {joiLikePost}
+const joiFollowUser = Joi.object({
+    accountId: Joi.objectId().required()
+});
+
+const joiViewAccount = Joi.object({
+    accountId: Joi.objectId().required()
+});
+
+export {joiLikePost, joiFollowUser,joiViewAccount}
