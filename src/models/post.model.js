@@ -1,4 +1,3 @@
-import { Timestamp } from "mongodb";
 import mongoose from "mongoose";
 
 const postSchema = new mongoose.Schema({
@@ -16,6 +15,14 @@ const postSchema = new mongoose.Schema({
         ref: "User",
         required: true,
         index: true
+    },
+    likeCount:{
+        type:Number,
+        default:0
+    },
+    commentCount:{
+        type:Number,
+        default:0
     }
 },
     { timestamps: true })
