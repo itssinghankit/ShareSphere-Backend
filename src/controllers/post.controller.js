@@ -5,10 +5,13 @@ import createError from "http-errors";
 import { uploadOnCloudinary } from "../middlewares/cloudinary.middleware.js";
 import { ApiResponse } from "../utils/ApiResponse.js";
 import likesModel from "../models/likes.model.js";
-import { joiFollowUser, joiLikePost, joiViewAccount } from "../helpers/postValidationSchema.js";
+import { joiFollowUser, joiLikePost, joiViewAccount, joiViewAccountFollowers } from "../helpers/postValidationSchema.js";
 import followModel from "../models/follow.model.js";
 import { userModel } from "../models/user.model.js";
 import mongoose from "mongoose";
+
+//helper function to convert string to object id
+const toObjectId = (id) => mongoose.Types.ObjectId.isValid(id) ? new mongoose.Types.ObjectId(id) : null;
 
 const savePost = asyncHandler(async (req, res) => {
 
@@ -60,7 +63,17 @@ const savePost = asyncHandler(async (req, res) => {
 
 const getAllPosts = asyncHandler(async (req, res) => {
     const posts = await postModel.find().populate("postedBy", "_id username avatar").sort({ createdAt: -1 });
-    res.status(200).json(new ApiResponse(200, posts, "All Posts"));
+
+    //for checking if we follow the post owner or not
+    let isFollowed = false
+    const followerId = req.user._id;
+    const accountId = posts.map(post => post.postedBy._id);
+    const user = await followModel.findOne({ followerId, accountId })
+    if (user) {
+        isFollowed = true
+    }
+
+    res.status(200).json(new ApiResponse(200, { ...posts, isFollowed }, "All posts"));
 })
 
 const getMyPosts = asyncHandler(async (req, res) => {
@@ -77,7 +90,7 @@ const likePost = asyncHandler(async (req, res) => {
     const postId = result.postId;
     const userId = req.user._id;
 
-    //check if user with account id exist or not
+    //check if post with postId exist or not
     const postExist = await postModel.findById(postId)
     if (!postExist) {
         throw createError.NotFound("No post with this post id exist")
@@ -97,12 +110,13 @@ const likePost = asyncHandler(async (req, res) => {
 
     const like = await likesModel.create({ postId: postId, likedBy: userId })
 
-    //increase the like count of the post
-    await postModel.findByIdAndUpdate(postId, { $inc: { likeCount: 1 } });
-
     if (!like) {
         throw createError.BadRequest();
     }
+
+    //increase the like count of the post
+    await postModel.findByIdAndUpdate(postId, { $inc: { likeCount: 1 } });
+
 
     res.status(200).json(new ApiResponse(200, {}, "Post Liked Successfully"));
 })
@@ -140,18 +154,9 @@ const followAccount = asyncHandler(async (req, res) => {
 
 const viewAccount = asyncHandler(async (req, res) => {
 
-    const toObjectId = (id) => mongoose.Types.ObjectId.isValid(id) ? new mongoose.Types.ObjectId(id) : null;
-
-
     const result = await joiViewAccount.validateAsync(req.params).catch(error => { throw createError.BadRequest(error.details[0].message) });
 
     const accountId = result.accountId
-
-    //check if user with account id exist or not
-    const userExist = await userModel.findById(accountId)
-    if (!userExist) {
-        throw createError.NotFound("No user with this account id exist")
-    }
 
     const details = await userModel.aggregate([
         {
@@ -186,10 +191,10 @@ const viewAccount = asyncHandler(async (req, res) => {
             $project: {
                 _id: 1,
                 username: 1,
-                fullName:1,
-                gender:1,
-                bio:1,
-                avatar:1,
+                fullName: 1,
+                gender: 1,
+                bio: 1,
+                avatar: 1,
                 followers: 1,
                 following: 1,
                 isFollowed: 1
@@ -198,10 +203,57 @@ const viewAccount = asyncHandler(async (req, res) => {
 
     ])
 
+    if (details.length == 0) {
+        throw createError.NotFound("No user with this account id exist")
+    }
+
     res.status(200).json(new ApiResponse(200, details[0], "sucessfully fetched"))
-
-
 
 })
 
-export { savePost, getAllPosts, getMyPosts, likePost, followAccount, viewAccount };
+
+const viewAccountFollowers = asyncHandler(async (req, res) => {
+    const result = await joiViewAccountFollowers.validateAsync(req.params).catch(error => { throw createError.BadRequest(error.details[0].message) });
+
+    const accountId = result.accountId
+    const userId = req.user._id
+
+
+    const isUserExist = await userModel.find({ _id: accountId })
+    if (!isUserExist) {
+        throw createError.NotFound("No user with this account id exist")
+    }
+
+    const followers = await followModel.aggregate([
+        {
+            $match: {
+                accountId: toObjectId(accountId)
+            }
+        },
+        {
+            $lookup: {
+                from: "users",
+                localField: "followerId",
+                foreignField: "_id",
+                as: "userDetails"
+            }
+        },
+        {
+            $addFields: {
+                avatar: "$userDetails.avatar",
+                fullName: "$userDetails.fullName",
+                username: "$userDetails.username",
+                isFollowed: { $in: [toObjectId(userId), followerId] }
+            }
+        }
+    ])
+
+    if (followers.length == 0) {
+        // throw createError.NotFound("No user with this account id exist")
+    }
+
+    res.status(200).json(new ApiResponse(200, followers, "followers fetched successfully"))
+
+})
+
+export { savePost, getAllPosts, getMyPosts, likePost, followAccount, viewAccount, viewAccountFollowers };
