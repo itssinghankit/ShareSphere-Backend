@@ -65,15 +65,24 @@ const getAllPosts = asyncHandler(async (req, res) => {
     const posts = await postModel.find().populate("postedBy", "_id username avatar").sort({ createdAt: -1 });
 
     //for checking if we follow the post owner or not
-    let isFollowed = false
-    const followerId = req.user._id;
-    const accountId = posts.map(post => post.postedBy._id);
-    const user = await followModel.findOne({ followerId, accountId })
-    if (user) {
-        isFollowed = true
-    }
 
-    res.status(200).json(new ApiResponse(200, { ...posts, isFollowed }, "All posts"));
+    //cant use async await with mapdirectly otherwise it return [ Promise { <pending> },...] so we use promise here
+    const response = await Promise.all(posts.map(async (post) => {
+        const followerId = req.user._id
+        const accountId = post.postedBy._id
+
+        const isfollowed = await followModel.findOne({ followerId, accountId })
+        return {
+            ...post.toObject(), isFollowed: !!isfollowed
+        }
+        /*
+        * A single ! operator is the logical NOT operator. It converts the operand to a boolean value and then inverts it.
+        * Using !! (double NOT) converts the value to a boolean without inverting it a second time, effectively giving you the "truthy" or "falsy" value of the operand. */
+
+    })
+    )
+
+    res.status(200).json(new ApiResponse(200, response, "All posts"));
 })
 
 const getMyPosts = asyncHandler(async (req, res) => {
@@ -218,7 +227,6 @@ const viewAccountFollowers = asyncHandler(async (req, res) => {
     const accountId = result.accountId
     const userId = req.user._id
 
-
     const isUserExist = await userModel.find({ _id: accountId })
     if (!isUserExist) {
         throw createError.NotFound("No user with this account id exist")
@@ -235,17 +243,50 @@ const viewAccountFollowers = asyncHandler(async (req, res) => {
                 from: "users",
                 localField: "followerId",
                 foreignField: "_id",
-                as: "userDetails"
+                as: "followerDetails"
             }
         },
         {
             $addFields: {
-                avatar: "$userDetails.avatar",
-                fullName: "$userDetails.fullName",
-                username: "$userDetails.username",
-                isFollowed: { $in: [toObjectId(userId), followerId] }
+                avatar: { $arrayElemAt: ["$followerDetails.avatar", 0] },
+                fullName: { $arrayElemAt: ["$followerDetails.fullName", 0] },
+                username: { $arrayElemAt: ["$followerDetails.username", 0] },
+                followerId: { $arrayElemAt: ["$followerDetails._id", 0] },
+                // isFollowed: { $in: [toObjectId(userId), "$followers.followerId"] }
+            }
+        }, {
+            $lookup: {
+                from: "follows",
+                let: { followerId: "$followerId" },
+                pipeline: [
+                    {
+                        $match: {
+                            $expr: {
+                                $eq: ["$accountId", "$$followerId"]
+                            }
+                        }
+                    }
+                ],
+                as: "followerFollowers"
+            }
+        },
+        {
+            $addFields: {
+                followers: { $size: "$followerFollowers" },
+                isFollowed: { $in: [toObjectId(userId), "$followerFollowers.followerId"] }
+            }
+        },
+        {
+            $project: {
+                avatar: 1,
+                fullName: 1,
+                username: 1,
+                followerId: 1,
+                followers: 1,
+                isFollowed: 1
             }
         }
+   
     ])
 
     if (followers.length == 0) {

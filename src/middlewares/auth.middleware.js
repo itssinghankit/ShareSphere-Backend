@@ -12,9 +12,7 @@ export const verifyJWT = asyncHandler(async (req, res, next) => {
         if (!token) {
             throw createError.Unauthorized("Token Not found");
         }
-        console.log(token + "a")
         const decodedToken = jwt.verify(token, process.env.ACCESS_TOKEN_SECRET)
-        console.log(token + "b")
         const user = await userModel.findById(decodedToken?._id).select("-password -refreshToken");
 
         if (!user) {
