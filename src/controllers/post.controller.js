@@ -5,7 +5,7 @@ import createError from "http-errors";
 import { uploadOnCloudinary } from "../middlewares/cloudinary.middleware.js";
 import { ApiResponse } from "../utils/ApiResponse.js";
 import likesModel from "../models/likes.model.js";
-import { joiFollowUser, joiLikePost, joiViewAccount, joiViewAccountFollowers } from "../helpers/postValidationSchema.js";
+import { joiFollowUser, joiLikePost, joiViewAccount, joiViewAccountFollowers, joiViewAccountFollowing } from "../helpers/postValidationSchema.js";
 import followModel from "../models/follow.model.js";
 import { userModel } from "../models/user.model.js";
 import mongoose from "mongoose";
@@ -251,18 +251,19 @@ const viewAccountFollowers = asyncHandler(async (req, res) => {
                 avatar: { $arrayElemAt: ["$followerDetails.avatar", 0] },
                 fullName: { $arrayElemAt: ["$followerDetails.fullName", 0] },
                 username: { $arrayElemAt: ["$followerDetails.username", 0] },
-                followerId: { $arrayElemAt: ["$followerDetails._id", 0] },
-                // isFollowed: { $in: [toObjectId(userId), "$followers.followerId"] }
+                followerId: { $arrayElemAt: ["$followerDetails._id", 0] }
             }
-        }, {
+        }, 
+        {
+            //person id is the id of that person whose followers we want to fetch here it is follower id
             $lookup: {
                 from: "follows",
-                let: { followerId: "$followerId" },
+                let: { personId: "$followerId" },
                 pipeline: [
                     {
                         $match: {
                             $expr: {
-                                $eq: ["$accountId", "$$followerId"]
+                                $eq: ["$accountId", "$$personId"]
                             }
                         }
                     }
@@ -272,7 +273,6 @@ const viewAccountFollowers = asyncHandler(async (req, res) => {
         },
         {
             $addFields: {
-                followers: { $size: "$followerFollowers" },
                 isFollowed: { $in: [toObjectId(userId), "$followerFollowers.followerId"] }
             }
         },
@@ -282,7 +282,6 @@ const viewAccountFollowers = asyncHandler(async (req, res) => {
                 fullName: 1,
                 username: 1,
                 followerId: 1,
-                followers: 1,
                 isFollowed: 1
             }
         }
@@ -293,8 +292,81 @@ const viewAccountFollowers = asyncHandler(async (req, res) => {
         // throw createError.NotFound("No user with this account id exist")
     }
 
-    res.status(200).json(new ApiResponse(200, followers, "followers fetched successfully"))
+    res.status(200).json(new ApiResponse(200,{ followers,followersCount:followers.length}, "followers fetched successfully"))
 
 })
 
-export { savePost, getAllPosts, getMyPosts, likePost, followAccount, viewAccount, viewAccountFollowers };
+const viewAccountFollowing = asyncHandler(async (req, res) => {
+    const result = await joiViewAccountFollowing.validateAsync(req.params).catch(error => { throw createError.BadRequest(error.details[0].message) });
+
+    const accountId = result.accountId
+    const userId = req.user._id
+
+    const isUserExist = await userModel.find({ _id: accountId })
+    if (!isUserExist) {
+        throw createError.NotFound("No user with this account id exist")
+    }
+
+    const following = await followModel.aggregate([
+        {
+            $match: {
+                followerId: toObjectId(accountId)
+            }
+        },
+        {
+            $lookup: {
+                from: "users",
+                localField: "accountId",
+                foreignField: "_id",
+                as: "followingDetails"
+            }
+        },
+        {
+            $addFields: {
+                avatar: { $arrayElemAt: ["$followingDetails.avatar", 0] },
+                fullName: { $arrayElemAt: ["$followingDetails.fullName", 0] },
+                username: { $arrayElemAt: ["$followingDetails.username", 0] },
+                followingId: { $arrayElemAt: ["$followingDetails._id", 0] }
+            }
+        }, 
+        {
+            $lookup: {
+                from: "follows",
+                let: { personId: "$accountId" },
+                pipeline: [
+                    {
+                        $match: {
+                            $expr: {
+                                $eq: ["$accountId", "$$personId"]
+                            }
+                        }
+                    }
+                ],
+                as: "followingFollowers"
+            }
+        },
+        {
+            $addFields: {
+                isFollowed: { $in: [toObjectId(userId), "$followingFollowers.followerId"] }
+            }
+        },
+        {
+            $project: {
+                avatar: 1,
+                fullName: 1,
+                username: 1,
+                followingId: 1,
+                following: 1,
+                isFollowed: 1
+            }
+        }
+   
+    ])
+
+   
+
+    res.status(200).json(new ApiResponse(200,{ following,followingCount:following.length}, "following fetched successfully"))
+
+})
+
+export { savePost, getAllPosts, getMyPosts, likePost, followAccount, viewAccount, viewAccountFollowers, viewAccountFollowing };

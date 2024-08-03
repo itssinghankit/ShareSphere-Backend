@@ -20,4 +20,9 @@ const joiViewAccountFollowers = Joi.object({
     accountId: Joi.objectId().required()
 });
 
-export {joiLikePost, joiFollowUser,joiViewAccount,joiViewAccountFollowers}
+const joiViewAccountFollowing = Joi.object({
+    accountId: Joi.objectId().required()
+});
+
+
+export {joiLikePost, joiFollowUser,joiViewAccount,joiViewAccountFollowers,joiViewAccountFollowing}

@@ -1,6 +1,6 @@
 import { Router } from "express";
 import { upload } from "../middlewares/multer.middleware.js";
-import { followAccount, getAllPosts, getMyPosts, likePost, savePost, viewAccount, viewAccountFollowers } from "../controllers/post.controller.js";
+import { followAccount, getAllPosts, getMyPosts, likePost, savePost, viewAccount, viewAccountFollowers, viewAccountFollowing } from "../controllers/post.controller.js";
 import { verifyJWT } from "../middlewares/auth.middleware.js";
 
 
@@ -23,5 +23,6 @@ postRouter.post("/follow-account/:accountId", verifyJWT, followAccount)
 
 postRouter.get("/view-account/:accountId", verifyJWT, viewAccount)
 postRouter.get("/view-account-followers/:accountId", verifyJWT, viewAccountFollowers)
+postRouter.get("/view-account-following/:accountId", verifyJWT, viewAccountFollowing)
 
 export default postRouter;
