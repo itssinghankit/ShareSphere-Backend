@@ -5,15 +5,16 @@ import createError from "http-errors";
 import { uploadOnCloudinary } from "../middlewares/cloudinary.middleware.js";
 import { ApiResponse } from "../utils/ApiResponse.js";
 import likesModel from "../models/likes.model.js";
-import { joiFollowUser, joiLikePost, joiViewAccount, joiViewAccountFollowers, joiViewAccountFollowing } from "../helpers/postValidationSchema.js";
+import { joiFollowUser, joiLikePost, joiSavePost, joiViewAccount, joiViewAccountFollowers, joiViewAccountFollowing } from "../helpers/postValidationSchema.js";
 import followModel from "../models/follow.model.js";
 import { userModel } from "../models/user.model.js";
 import mongoose from "mongoose";
+import savePostModel from "../models/savePost.model.js";
 
 //helper function to convert string to object id
 const toObjectId = (id) => mongoose.Types.ObjectId.isValid(id) ? new mongoose.Types.ObjectId(id) : null;
 
-const savePost = asyncHandler(async (req, res) => {
+const createPost = asyncHandler(async (req, res) => {
 
     //checks validation if failed then throws error else saves the details to result
     // const result = await joiDetailsSchema.validateAsync(req.body).catch(error => { throw createError.BadRequest(error.details[0].message) });
@@ -369,4 +370,36 @@ const viewAccountFollowing = asyncHandler(async (req, res) => {
 
 })
 
-export { savePost, getAllPosts, getMyPosts, likePost, followAccount, viewAccount, viewAccountFollowers, viewAccountFollowing };
+const savePost=asyncHandler(async(req,res)=>{
+
+    const result=await joiSavePost.validateAsync(req.params).catch(error => { throw createError.BadRequest(error.details[0].message) });
+
+    const postId=result.postId;
+    const userId=req.user._id;
+
+    //check if post with postId exist or not
+    const postExist = await postModel.findById(postId)
+    if (!postExist) {
+        throw createError.NotFound("No post with this post id exist")
+    }
+
+    //check if already saved or not
+    const alreadySaved = await savePostModel.findOne({ postId,savedById:userId});
+
+    if(alreadySaved){
+        //unsave the post
+        await alreadySaved.deleteOne()
+        return res.status(200).json(new ApiResponse(200,{}, "Post Unsaved Successfully"));
+    }
+
+    //post not saved so save post
+    const savedPost=await savePostModel.create({postId,savedById:userId})
+    if(!savedPost){
+        throw createError.BadRequest("Cannot save post");
+    }
+
+    res.status(200).json(new ApiResponse(200,{}, "Post Saved Successfully"));
+
+})
+
+export { createPost, getAllPosts, getMyPosts, likePost, followAccount, viewAccount, viewAccountFollowers, viewAccountFollowing,savePost };
