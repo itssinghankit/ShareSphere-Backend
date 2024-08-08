@@ -63,7 +63,21 @@ const createPost = asyncHandler(async (req, res) => {
 });
 
 const getAllPosts = asyncHandler(async (req, res) => {
-    const posts = await postModel.find().populate("postedBy", "_id username avatar").sort({ createdAt: -1 });
+
+    //pagination
+    const page = parseInt(req.query.page) || 1;
+    const limit = parseInt(req.query.limit) || 10;
+    const skip = (page - 1) * limit;
+
+    const posts = await postModel.find()
+        .populate("postedBy", "_id username avatar")
+        .sort({ createdAt: -1 })
+        .skip(skip)
+        .limit(limit);
+
+    const totalPosts = await postModel.countDocuments();
+    const totalPages = Math.ceil(totalPosts / limit);
+    const currentPage = page;
 
     //for checking if we follow the post owner or not
 
@@ -83,7 +97,7 @@ const getAllPosts = asyncHandler(async (req, res) => {
     })
     )
 
-    res.status(200).json(new ApiResponse(200, response, "All posts"));
+    res.status(200).json(new ApiResponse(200, { posts: response, totalPosts, totalPages, currentPage }, "All posts"));
 })
 
 const getMyPosts = asyncHandler(async (req, res) => {
@@ -254,7 +268,7 @@ const viewAccountFollowers = asyncHandler(async (req, res) => {
                 username: { $arrayElemAt: ["$followerDetails.username", 0] },
                 followerId: { $arrayElemAt: ["$followerDetails._id", 0] }
             }
-        }, 
+        },
         {
             //person id is the id of that person whose followers we want to fetch here it is follower id
             $lookup: {
@@ -286,14 +300,14 @@ const viewAccountFollowers = asyncHandler(async (req, res) => {
                 isFollowed: 1
             }
         }
-   
+
     ])
 
     if (followers.length == 0) {
         // throw createError.NotFound("No user with this account id exist")
     }
 
-    res.status(200).json(new ApiResponse(200,{ followers,followersCount:followers.length}, "followers fetched successfully"))
+    res.status(200).json(new ApiResponse(200, { followers, followersCount: followers.length }, "followers fetched successfully"))
 
 })
 
@@ -329,7 +343,7 @@ const viewAccountFollowing = asyncHandler(async (req, res) => {
                 username: { $arrayElemAt: ["$followingDetails.username", 0] },
                 followingId: { $arrayElemAt: ["$followingDetails._id", 0] }
             }
-        }, 
+        },
         {
             $lookup: {
                 from: "follows",
@@ -361,21 +375,21 @@ const viewAccountFollowing = asyncHandler(async (req, res) => {
                 isFollowed: 1
             }
         }
-   
+
     ])
 
-   
 
-    res.status(200).json(new ApiResponse(200,{ following,followingCount:following.length}, "following fetched successfully"))
+
+    res.status(200).json(new ApiResponse(200, { following, followingCount: following.length }, "following fetched successfully"))
 
 })
 
-const savePost=asyncHandler(async(req,res)=>{
+const savePost = asyncHandler(async (req, res) => {
 
-    const result=await joiSavePost.validateAsync(req.params).catch(error => { throw createError.BadRequest(error.details[0].message) });
+    const result = await joiSavePost.validateAsync(req.params).catch(error => { throw createError.BadRequest(error.details[0].message) });
 
-    const postId=result.postId;
-    const userId=req.user._id;
+    const postId = result.postId;
+    const userId = req.user._id;
 
     //check if post with postId exist or not
     const postExist = await postModel.findById(postId)
@@ -384,22 +398,42 @@ const savePost=asyncHandler(async(req,res)=>{
     }
 
     //check if already saved or not
-    const alreadySaved = await savePostModel.findOne({ postId,savedById:userId});
+    const alreadySaved = await savePostModel.findOne({ postId, savedById: userId });
 
-    if(alreadySaved){
+    if (alreadySaved) {
         //unsave the post
         await alreadySaved.deleteOne()
-        return res.status(200).json(new ApiResponse(200,{}, "Post Unsaved Successfully"));
+        return res.status(200).json(new ApiResponse(200, {}, "Post Unsaved Successfully"));
     }
 
     //post not saved so save post
-    const savedPost=await savePostModel.create({postId,savedById:userId})
-    if(!savedPost){
+    const savedPost = await savePostModel.create({ postId, savedById: userId })
+    if (!savedPost) {
         throw createError.BadRequest("Cannot save post");
     }
 
-    res.status(200).json(new ApiResponse(200,{}, "Post Saved Successfully"));
+    res.status(200).json(new ApiResponse(200, {}, "Post Saved Successfully"));
 
 })
 
-export { createPost, getAllPosts, getMyPosts, likePost, followAccount, viewAccount, viewAccountFollowers, viewAccountFollowing,savePost };
+const showSavedPost = asyncHandler(async (req, res) => {
+    const savedPosts = await savePostModel.find({ savedById: req.user._id })
+        .populate('postId', '_id caption postImages likeCount createdAt')
+        .populate('postId.postedBy', '_id username avatar')
+        .sort({ createdAt: -1 });
+
+    const response = await Promise.all(savedPost.map(async (post) => {
+        const followerId = req.user._id
+        const accountId = post.postId.postedBy._id
+
+        const isfollowed = await followModel.findOne({ followerId, accountId })
+        return {
+            ...savedPost.toObject(), isFollowed: !!isfollowed
+        }
+    }))
+
+    res.status(200).json(new ApiResponse(200, response, "All saved posts"));
+
+})
+
+export { createPost, getAllPosts, getMyPosts, likePost, followAccount, viewAccount, viewAccountFollowers, viewAccountFollowing, savePost, showSavedPost };

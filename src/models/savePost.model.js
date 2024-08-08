@@ -1,6 +1,6 @@
 import mongoose from "mongoose";
 
-const savedPostSchema = new mongoose.Schema({
+const savedPostModel = new mongoose.Schema({
     postId: {
         type: mongoose.Schema.Types.ObjectId,
         ref: "Post",
@@ -15,4 +15,5 @@ const savedPostSchema = new mongoose.Schema({
     }
 });
 
-export default mongoose.model("SavedPost", savedPostSchema);
+
+export default mongoose.model("SavedPost", savedPostModel);
