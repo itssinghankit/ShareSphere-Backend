@@ -70,7 +70,7 @@ const getAllPosts = asyncHandler(async (req, res) => {
     const skip = (page - 1) * limit;
 
     const posts = await postModel.find()
-        .populate("postedBy", "_id username avatar")
+        .populate("postedBy", "_id username avatar fullName")
         .sort({ createdAt: -1 })
         .skip(skip)
         .limit(limit);
@@ -91,7 +91,6 @@ const getAllPosts = asyncHandler(async (req, res) => {
         //checking if the post is saved or not by user
         const postId=post._id
         const isSaved = await savePostModel.findOne({postId,savedById:userId})
-    
 
         return {
             ...post.toObject(), isFollowed: !!isfollowed, isSaved: !!isSaved
