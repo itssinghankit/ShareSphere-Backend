@@ -83,12 +83,18 @@ const getAllPosts = asyncHandler(async (req, res) => {
 
     //cant use async await with mapdirectly otherwise it return [ Promise { <pending> },...] so we use promise here
     const response = await Promise.all(posts.map(async (post) => {
-        const followerId = req.user._id
+        const userId = req.user._id
         const accountId = post.postedBy._id
 
-        const isfollowed = await followModel.findOne({ followerId, accountId })
+        const isfollowed = await followModel.findOne({ followerId:userId, accountId })
+
+        //checking if the post is saved or not by user
+        const postId=post._id
+        const isSaved = await savePostModel.findOne({postId,savedById:userId})
+    
+
         return {
-            ...post.toObject(), isFollowed: !!isfollowed
+            ...post.toObject(), isFollowed: !!isfollowed, isSaved: !!isSaved
         }
         /*
         * A single ! operator is the logical NOT operator. It converts the operand to a boolean value and then inverts it.
@@ -234,7 +240,6 @@ const viewAccount = asyncHandler(async (req, res) => {
     res.status(200).json(new ApiResponse(200, details[0], "sucessfully fetched"))
 
 })
-
 
 const viewAccountFollowers = asyncHandler(async (req, res) => {
     const result = await joiViewAccountFollowers.validateAsync(req.params).catch(error => { throw createError.BadRequest(error.details[0].message) });
