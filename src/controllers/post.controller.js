@@ -86,14 +86,17 @@ const getAllPosts = asyncHandler(async (req, res) => {
         const userId = req.user._id
         const accountId = post.postedBy._id
 
-        const isfollowed = await followModel.findOne({ followerId:userId, accountId })
+        const isfollowed = await followModel.findOne({ followerId: userId, accountId })
 
         //checking if the post is saved or not by user
-        const postId=post._id
-        const isSaved = await savePostModel.findOne({postId,savedById:userId})
+        const postId = post._id
+        const isSaved = await savePostModel.findOne({ postId, savedById: userId })
+
+        //checking if the post is likes or not by user
+        const isLiked = await likesModel.findOne({ postId, likedBy: userId })
 
         return {
-            ...post.toObject(), isFollowed: !!isfollowed, isSaved: !!isSaved
+            ...post.toObject(), isFollowed: !!isfollowed, isSaved: !!isSaved, isLiked: !!isLiked
         }
         /*
         * A single ! operator is the logical NOT operator. It converts the operand to a boolean value and then inverts it.
