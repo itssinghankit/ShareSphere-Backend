@@ -17,6 +17,7 @@ ShareSphere is a robust backend for a social media application, built with Node.
 - Node.js
 - Express.js
 - MongoDB (Database)
+- Aggregation Pipelines (Complex database operations)
 - JSON Web Token (Authentication)
 - Cloudinary (Image storage)
 - Multer (File upload handling)
