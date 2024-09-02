@@ -68,7 +68,7 @@ The application includes the following main routes:
 
 1. Clone the repository:
    ```
-   git clone https://github.com/yourusername/sharesphere-backend.git
+   git clone https://github.com/itssinghankit/sharesphere-backend.git
    ```
 
 2. Navigate to the project directory:
@@ -96,17 +96,9 @@ The application includes the following main routes:
 
 5. Start the server:
    ```
-   npm start
+   npm run dev
    ```
-
-## API Documentation
-
-For detailed API documentation, please refer to the [API_DOCS.md](API_DOCS.md) file.
 
 ## Contributing
 
 Contributions are welcome! Please feel free to submit a Pull Request.
-
-## License
-
-This project is licensed under the MIT License - see the [LICENSE.md](LICENSE.md) file for details.
