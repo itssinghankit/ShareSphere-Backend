@@ -424,22 +424,66 @@ const savePost = asyncHandler(async (req, res) => {
 })
 
 const showSavedPost = asyncHandler(async (req, res) => {
-    const savedPosts = await savePostModel.find({ savedById: req.user._id })
-        .populate('postId', '_id caption postImages likeCount createdAt')
-        .populate('postId.postedBy', '_id username avatar')
-        .sort({ createdAt: -1 });
 
-    const response = await Promise.all(savedPost.map(async (post) => {
-        const followerId = req.user._id
-        const accountId = post.postId.postedBy._id
+        const savedPosts = await savePostModel.aggregate(
+            [
+                {
+                  $match: {
+                    savedById:toObjectId(req.user._id)
+                  }
+                },
+                {
+                  $lookup: {
+                    from: "posts",
+                    localField: "postId",
+                    foreignField: "_id",
+                    as: "postDetails"
+                  }
+                },
+                {
+                  $addFields: {
+                    postDetails: {$first:"$postDetails"} 
+                  }
+                },
+                
+                {
+                 $lookup:{
+                      from: "users",
+                      localField: "postDetails.postedBy",
+                      foreignField: "_id",
+                      as: "postedBy"
+                    }  
+                },
+                {
+                  $addFields: {
+                    postedBy: {$first:"$postedBy"}
+                  }
+                },
+                {
+                  $project: {
+                   postDetails:1,
+                    "postedBy._id":1,
+                    "postedBy.username":1,
+                    "postedBy.fullName":1,
+                    "postedBy.avatar":1
+                  }
+                }
+                
+              ]
+        )
 
-        const isfollowed = await followModel.findOne({ followerId, accountId })
-        return {
-            ...savedPost.toObject(), isFollowed: !!isfollowed
-        }
-    }))
+    // const response = await Promise.all(savedPosts.map(async (post) => {
+    //     const followerId = req.user._id
+    //     const accountId = post.postedBy._id
+    //     console.log(...post.toObject())
 
-    res.status(200).json(new ApiResponse(200, response, "All saved posts"));
+    //     const isfollowed = await followModel.findOne({ followerId, accountId })
+    //     return {
+    //         ...post.toObject(), isFollowed: !!isfollowed
+    //     }
+    // }))
+
+    res.status(200).json(new ApiResponse(200, savedPosts, "All saved posts"));
 
 })
 

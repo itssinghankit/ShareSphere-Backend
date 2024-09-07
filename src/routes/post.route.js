@@ -19,7 +19,7 @@ postRouter.get("/view-account/:accountId", verifyJWT, viewAccount)
 postRouter.get("/view-account-followers/:accountId", verifyJWT, viewAccountFollowers)
 postRouter.get("/view-account-following/:accountId", verifyJWT, viewAccountFollowing)
 postRouter.post("/save-post/:postId", verifyJWT, savePost)
-postRouter.get("/show-saved-post/", verifyJWT, showSavedPost)
+postRouter.get("/show-saved-post", verifyJWT, showSavedPost)
 
 
 export default postRouter;
