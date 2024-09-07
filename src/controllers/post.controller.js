@@ -86,7 +86,12 @@ const getAllPosts = asyncHandler(async (req, res) => {
         const userId = req.user._id
         const accountId = post.postedBy._id
 
-        const isfollowed = await followModel.findOne({ followerId: userId, accountId })
+        let isfollowed = await followModel.findOne({ followerId: userId, accountId })
+
+        //we assume that we follow ourself
+        if(userId.toString()===toObjectId(accountId).toString()){
+            isfollowed=true
+        }
 
         //checking if the post is saved or not by user
         const postId = post._id
