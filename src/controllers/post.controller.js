@@ -505,10 +505,6 @@ const searchUser = asyncHandler(async (req, res) => {
         ]
     }).select("_id username fullName avatar")
 
-    if (!users) {
-        throw createHttpError.BadRequest("Check Post Id")
-    }
-
     //for checking if we follow the post owner or not
 
     const response = await Promise.all(users.map(async (user) => {
