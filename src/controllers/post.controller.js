@@ -505,6 +505,10 @@ const searchUser = asyncHandler(async (req, res) => {
         ]
     }).select("_id username fullName avatar")
 
+    if(users.length==0){
+        return  res.status(200).json(new ApiResponse(200, users, "No User Found"));
+    }
+
     //for checking if we follow the post owner or not
 
     const response = await Promise.all(users.map(async (user) => {
@@ -524,7 +528,7 @@ const searchUser = asyncHandler(async (req, res) => {
     })
     )
 
-    res.status(200).json(new ApiResponse(200, response, "Search done successfully"));
+   return res.status(200).json(new ApiResponse(200, response, "Search done successfully"));
 
 })
 
