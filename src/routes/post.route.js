@@ -1,6 +1,6 @@
 import { Router } from "express";
 import { upload } from "../middlewares/multer.middleware.js";
-import { createPost, followAccount, getAllPosts, getMyPosts, likePost, savePost, showSavedPost, viewAccount, viewAccountFollowers, viewAccountFollowing } from "../controllers/post.controller.js";
+import { comment, createPost, followAccount, getAllPosts, getMyPosts, likePost, savePost, searchUser, showComments, showSavedPost, viewAccount, viewAccountFollowers, viewAccountFollowing } from "../controllers/post.controller.js";
 import { verifyJWT } from "../middlewares/auth.middleware.js";
 
 
@@ -20,6 +20,8 @@ postRouter.get("/view-account-followers/:accountId", verifyJWT, viewAccountFollo
 postRouter.get("/view-account-following/:accountId", verifyJWT, viewAccountFollowing)
 postRouter.post("/save-post/:postId", verifyJWT, savePost)
 postRouter.get("/show-saved-post", verifyJWT, showSavedPost)
-
+postRouter.get("/search-user/:search",verifyJWT,searchUser)
+postRouter.post("/comment/:postId",verifyJWT,comment)
+postRouter.get("/show-comments/:postId",verifyJWT,showComments)
 
 export default postRouter;

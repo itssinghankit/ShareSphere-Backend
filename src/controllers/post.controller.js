@@ -5,11 +5,13 @@ import createError from "http-errors";
 import { uploadOnCloudinary } from "../middlewares/cloudinary.middleware.js";
 import { ApiResponse } from "../utils/ApiResponse.js";
 import likesModel from "../models/likes.model.js";
-import { joiFollowUser, joiLikePost, joiSavePost, joiViewAccount, joiViewAccountFollowers, joiViewAccountFollowing } from "../helpers/postValidationSchema.js";
+import { joiComment, joiFollowUser, joiLikePost, joiSavePost, joishowComments, joiViewAccount, joiViewAccountFollowers, joiViewAccountFollowing } from "../helpers/postValidationSchema.js";
 import followModel from "../models/follow.model.js";
 import { userModel } from "../models/user.model.js";
 import mongoose from "mongoose";
 import savePostModel from "../models/savePost.model.js";
+import commentModel from "../models/comment.model.js";
+import createHttpError from "http-errors";
 
 //helper function to convert string to object id
 const toObjectId = (id) => mongoose.Types.ObjectId.isValid(id) ? new mongoose.Types.ObjectId(id) : null;
@@ -89,8 +91,8 @@ const getAllPosts = asyncHandler(async (req, res) => {
         let isfollowed = await followModel.findOne({ followerId: userId, accountId })
 
         //we assume that we follow ourself
-        if(userId.toString()===toObjectId(accountId).toString()){
-            isfollowed=true
+        if (userId.toString() === toObjectId(accountId).toString()) {
+            isfollowed = true
         }
 
         //checking if the post is saved or not by user
@@ -430,52 +432,52 @@ const savePost = asyncHandler(async (req, res) => {
 
 const showSavedPost = asyncHandler(async (req, res) => {
 
-        const savedPosts = await savePostModel.aggregate(
-            [
-                {
-                  $match: {
-                    savedById:toObjectId(req.user._id)
-                  }
-                },
-                {
-                  $lookup: {
+    const savedPosts = await savePostModel.aggregate(
+        [
+            {
+                $match: {
+                    savedById: toObjectId(req.user._id)
+                }
+            },
+            {
+                $lookup: {
                     from: "posts",
                     localField: "postId",
                     foreignField: "_id",
                     as: "postDetails"
-                  }
-                },
-                {
-                  $addFields: {
-                    postDetails: {$first:"$postDetails"} 
-                  }
-                },
-                
-                {
-                 $lookup:{
-                      from: "users",
-                      localField: "postDetails.postedBy",
-                      foreignField: "_id",
-                      as: "postedBy"
-                    }  
-                },
-                {
-                  $addFields: {
-                    postedBy: {$first:"$postedBy"}
-                  }
-                },
-                {
-                  $project: {
-                   postDetails:1,
-                    "postedBy._id":1,
-                    "postedBy.username":1,
-                    "postedBy.fullName":1,
-                    "postedBy.avatar":1
-                  }
                 }
-                
-              ]
-        )
+            },
+            {
+                $addFields: {
+                    postDetails: { $first: "$postDetails" }
+                }
+            },
+
+            {
+                $lookup: {
+                    from: "users",
+                    localField: "postDetails.postedBy",
+                    foreignField: "_id",
+                    as: "postedBy"
+                }
+            },
+            {
+                $addFields: {
+                    postedBy: { $first: "$postedBy" }
+                }
+            },
+            {
+                $project: {
+                    postDetails: 1,
+                    "postedBy._id": 1,
+                    "postedBy.username": 1,
+                    "postedBy.fullName": 1,
+                    "postedBy.avatar": 1
+                }
+            }
+
+        ]
+    )
 
     // const response = await Promise.all(savedPosts.map(async (post) => {
     //     const followerId = req.user._id
@@ -492,4 +494,83 @@ const showSavedPost = asyncHandler(async (req, res) => {
 
 })
 
-export { createPost, getAllPosts, getMyPosts, likePost, followAccount, viewAccount, viewAccountFollowers, viewAccountFollowing, savePost, showSavedPost };
+const searchUser = asyncHandler(async (req, res) => {
+
+    const { search } = req.params;
+
+    const users = await userModel.find({
+        $or: [
+            { username: { $regex: search, $options: "i" } },
+            { fullName: { $regex: search, $options: "i" } }
+        ]
+    }).select("_id username fullName avatar")
+
+    if (!users) {
+        throw createHttpError.BadRequest("Check Post Id")
+    }
+
+    //for checking if we follow the post owner or not
+
+    const response = await Promise.all(users.map(async (user) => {
+        const userId = req.user._id
+        const accountId = user._id
+
+        let isfollowed = await followModel.findOne({ followerId: userId, accountId })
+
+        //we assume that we follow ourself
+        if (userId.toString() === toObjectId(accountId).toString()) {
+            isfollowed = true
+        }
+
+        return {
+            ...user.toObject(), isFollowed: !!isfollowed
+        }
+    })
+    )
+
+    res.status(200).json(new ApiResponse(200, response, "Search done successfully"));
+
+})
+
+const comment = asyncHandler(async (req, res) => {
+    const result = await joiComment.validateAsync({ ...req.params, ...req.body }).catch(error => { throw createError.BadRequest(error.details[0].message) });
+    const { postId, content } = result;
+
+    const comment = await commentModel.create({
+        content: content,
+        commentedBy: req.user._id,
+        postId: postId
+    });
+
+    if (!comment) {
+        throw createError.BadRequest("Comment not added");
+    }
+
+    const increaseComment = await postModel.findByIdAndUpdate({_id:postId}, { $inc: { commentCount: 1 } });
+
+    if(!increaseComment){
+        throw createError.InternalServerError("Comment added by its count not updated.");
+    }
+
+    res.status(200).json(new ApiResponse(200, comment, "Comment added successfully"));
+
+})
+
+const showComments = asyncHandler(async (req, res) => {
+    const result = await joishowComments.validateAsync(req.params).catch(error => { throw createError.BadRequest(error.details[0].message) });
+    const { postId } = result;
+
+    const comments = await commentModel.find({ postId }).populate("commentedBy", "username avatar fullName _id").select("content commentedBy createdAt").sort({ createdAt: -1 });
+
+    if(!comments){
+        throw createError.BadRequest("Check Post Id");
+    }
+
+    if (comments.length == 0) {
+        res.status(200).json(new ApiResponse(200, comments, "No comments found"));
+    }
+
+    res.status(200).json(new ApiResponse(200, comments, "All comments fetched"));
+})
+
+export { createPost, getAllPosts, getMyPosts, likePost, followAccount, viewAccount, viewAccountFollowers, viewAccountFollowing, savePost, showSavedPost, searchUser, comment,showComments };

@@ -27,6 +27,13 @@ const joiViewAccountFollowing = Joi.object({
 const joiSavePost = Joi.object({
     postId: Joi.objectId().required()
 });
+const joiComment = Joi.object({
+    postId: Joi.objectId().required(),
+    content: Joi.string().required()
+});
+const joishowComments = Joi.object({
+    postId: Joi.objectId().required()
+});
 
 
-export {joiLikePost, joiFollowUser,joiViewAccount,joiViewAccountFollowers,joiViewAccountFollowing,joiSavePost}
+export {joiLikePost, joiFollowUser,joiViewAccount,joiViewAccountFollowers,joiViewAccountFollowing,joiSavePost,joiComment,joishowComments}
