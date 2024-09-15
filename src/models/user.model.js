@@ -57,6 +57,10 @@ const userSchema = new Schema({
     },
     isDetailsFilled: {
         type: Boolean
+    },
+    isOnline:{
+        type:Boolean,
+        default:false
     }
 },
     { timestamps: true }

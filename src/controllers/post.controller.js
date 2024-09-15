@@ -502,8 +502,10 @@ const searchUser = asyncHandler(async (req, res) => {
         $or: [
             { username: { $regex: search, $options: "i" } },
             { fullName: { $regex: search, $options: "i" } }
-        ]
-    }).select("_id username fullName avatar")
+        ],
+        //removing our self from search
+        _id:{$ne:req.user._id}
+    }).select("username fullName avatar isOnline")
 
     if(users.length==0){
         return  res.status(200).json(new ApiResponse(200, users, "No User Found"));

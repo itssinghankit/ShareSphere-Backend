@@ -12,4 +12,19 @@ const asyncHandler = (requestHandlerFun) => {
     }
 }
 
-export { asyncHandler }
+// const asyncHandlerSocket = (requestHandlerFun) => {
+//   return (socket, next) => {
+//       Promise.resolve(requestHandlerFun(socket, next)).catch((err) => {
+//         console.log(err);
+//           if(err.status){
+//           next(err);
+//          }
+//          next(createError.InternalServerError(err.message));
+//       })
+//   }
+// }
+
+export { asyncHandler
+  // , 
+  // asyncHandlerSocket 
+};
