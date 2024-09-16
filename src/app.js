@@ -43,7 +43,7 @@ app.use(express.static("public"));
 app.use(cookieParser());
 
 //initializing socket io for chat
-// initializeSocketIO(io)
+initializeSocketIO(io)
 
 //routes
 app.get("/", (req, res) => {
