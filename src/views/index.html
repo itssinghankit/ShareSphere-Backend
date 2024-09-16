@@ -24,43 +24,51 @@
     <p style="color: red" id="error"></p>
     <p style="color: red" id="errorcode"></p>
 
-    <script>
-      const token =
-        "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJfaWQiOiI2NjU1ZDhmYmEwYzc4YzAzY2ZlZjJjZjMiLCJ1c2VybmFtZSI6ImFua2l0c2luZ2giLCJlbWFpbCI6InlvdXJtdXNpY2FsbW9tZW50c0BnbWFpbC5jb20iLCJmdWxsTmFtZSI6IkFua2l0IFNpbmdoIiwiaWF0IjoxNzI2NDA2NDE3LCJleHAiOjE3MjY0OTI4MTd9.Mzi7Y-VryJgDqzq6jK4Lyc6TovOfP_LM5EEvgJdI280";
-
-      let socket = io(
-        "https://share-sphere-backend.vercel.app/",
-        {
-          auth: {
-            token: token,
-          },
-        }
-      );
-
-      socket.on("connected", (data) => {
-        document.getElementById("id").innerText = data;
-        console.log("we are connected");
-      });
-
-      socket.on("socket-error", (data) => {
-        console.log(data);
-        document.getElementById("error").innerText = data.errors.message;
-        document.getElementById("errorcode").innerText = data.statusCode;
-      });
-
-      socket.on("message-received", (data) => {
-        console.log("message received");
-        console.log(data);
-      });
-
-      socket.on("new-chat", (data) => {
-        console.log("new chat created");
-        console.log(data);
-      });
-
-      socket.on("disconnect", () => {
-        console.log("we are disconnected");
-      });
-    </script>
+     <script>
+    const socket = new WebSocket("ws://share-sphere-backend.vercel.app/");
+  
+    socket.addEventListener("open", (event) => {
+      console.log("WebSocket is open now.");
+    });
+  
+    socket.addEventListener("error", (error) => {
+      console.error("WebSocket error observed:", error);
+      document.getElementById("error").innerText = "WebSocket error: " + error.message;
+    });
+  
+    socket.addEventListener("close", (event) => {
+      console.log("WebSocket is closed now.");
+      document.getElementById("error").innerText = "WebSocket connection closed.";
+    });
+  
+    socket.addEventListener("message", (event) => {
+      console.log("Message from server ", event.data);
+    });
+  
+    socket.addEventListener("connected", (data) => {
+      document.getElementById("id").innerText = data;
+      console.log("we are connected");
+    });
+  
+    socket.addEventListener("socket-error", (data) => {
+      console.log(data);
+      document.getElementById("error").innerText = data.errors.message;
+      document.getElementById("errorcode").innerText = data.statusCode;
+    });
+  
+    socket.addEventListener("message-received", (data) => {
+      console.log("message received");
+      console.log(data);
+    });
+  
+    socket.addEventListener("new-chat", (data) => {
+      console.log("new chat created");
+      console.log(data);
+    });
+  
+    socket.addEventListener("disconnect", () => {
+      console.log("WebSocket disconnected");
+    });
+  </script>
   </body>
 </html>
