@@ -20,19 +20,9 @@ const __dirname = path.dirname(__filename)
 const app = express();
 const httpServer = createServer(app);
 
-const io = new Server(httpServer,{
-    handlePreflightRequest: (req, res) => {
-        const headers = {
-            "Access-Control-Allow-Headers": "Content-Type, Authorization",
-            "Access-Control-Allow-Origin": req.headers.origin, //or the specific origin you want to give access to,
-            "Access-Control-Allow-Credentials": true
-        };
-        res.writeHead(200, headers);
-        res.end();
-    }
-});
+// const io = new Server(httpServer);
 
-app.set("io", io); // using set method to mount the `io` instance on the app to avoid usage of `global`
+// app.set("io", io); // using set method to mount the `io` instance on the app to avoid usage of `global`
 
 const corsConfig = {
     origin: process.env.CORS_ORIGIN,
@@ -46,7 +36,7 @@ app.use(express.static("public"));
 app.use(cookieParser());
 
 //initializing socket io for chat
-initializeSocketIO(io)
+// initializeSocketIO(io)
 
 //routes
 app.get("/", (req, res) => {
