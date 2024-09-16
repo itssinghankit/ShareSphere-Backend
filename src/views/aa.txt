@@ -7,10 +7,7 @@
     <script src="https://cdnjs.cloudflare.com/ajax/libs/socket.io/4.5.2/socket.io.js"></script>
   </head>
   <body style="background-color: rgb(24, 245, 197)">
-    <p
-      id="heading"
-      style="color: rgb(0, 0, 0); font-size: 20px; text-align: center"
-    >
+    <p id="heading" style="color: rgb(0, 0, 0); font-size: 20px; text-align: center">
       Socket testing
     </p>
     <span>Your ID is: </span>
@@ -20,21 +17,19 @@
     <p style="color: red" id="errorcode"></p>
 
     <script>
-      const token =
-        "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJfaWQiOiI2NjU1ZDhmYmEwYzc4YzAzY2ZlZjJjZjMiLCJ1c2VybmFtZSI6ImFua2l0c2luZ2giLCJlbWFpbCI6InlvdXJtdXNpY2FsbW9tZW50c0BnbWFpbC5jb20iLCJmdWxsTmFtZSI6IkFua2l0IFNpbmdoIiwiaWF0IjoxNzI2NDA2NDE3LCJleHAiOjE3MjY0OTI4MTd9.Mzi7Y-VryJgDqzq6jK4Lyc6TovOfP_LM5EEvgJdI280";
+      const token = "YOUR_TOKEN_HERE"; // Replace with your actual token
 
       let socket;
       try {
         socket = io("https://share-sphere-backend.vercel.app", {
+          transports: ['websocket'],
           auth: {
             token: token,
           },
-          timeout: 10000,
         });
       } catch (error) {
         console.error("Error initializing socket:", error);
-        document.getElementById("error").innerText =
-          "Failed to initialize socket connection";
+        document.getElementById("error").innerText = "Failed to initialize socket connection";
       }
 
       if (socket) {
@@ -49,16 +44,13 @@
 
         socket.on("connect_error", (error) => {
           console.error("Connection error:", error);
-          document.getElementById("error").innerText =
-            "Connection error: " + error.message;
+          document.getElementById("error").innerText = "Connection error: " + error.message;
         });
 
         socket.on("socket-error", (data) => {
           console.error("Socket error:", data);
-          document.getElementById("error").innerText =
-            data.errors?.message || "Unknown error";
-          document.getElementById("errorcode").innerText =
-            data.statusCode || "";
+          document.getElementById("error").innerText = data.errors?.message || "Unknown error";
+          document.getElementById("errorcode").innerText = data.statusCode || "";
         });
 
         socket.on("message-received", (data) => {
