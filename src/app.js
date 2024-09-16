@@ -20,9 +20,16 @@ const __dirname = path.dirname(__filename)
 const app = express();
 const httpServer = createServer(app);
 
-// const io = new Server(httpServer);
+const io = new Server(httpServer, {
+    pingTimeout: 60000,
+    cors: {
+        origin: process.env.CORS_ORIGIN,
+        credentials: true,
+    },
+});
 
-// app.set("io", io); // using set method to mount the `io` instance on the app to avoid usage of `global`
+app.set("io", io); // using set method to mount the `io` instance on the app to avoid usage of `global`
+
 
 const corsConfig = {
     origin: process.env.CORS_ORIGIN,
@@ -56,7 +63,7 @@ app.use("/api/v1/post", postRouter);
 app.use("/api/v1/chat", chatRouter);
 
 //message routes
-app.use("/api/v1/message",messageRouter);
+app.use("/api/v1/message", messageRouter);
 
 //error generation
 app.use(async (req, res, next) => {
