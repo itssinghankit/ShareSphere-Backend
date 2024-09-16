@@ -20,59 +20,59 @@
     <p style="color: red" id="errorcode"></p>
 
     <script>
-      // const token =
-      //   "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJfaWQiOiI2NjU1ZDhmYmEwYzc4YzAzY2ZlZjJjZjMiLCJ1c2VybmFtZSI6ImFua2l0c2luZ2giLCJlbWFpbCI6InlvdXJtdXNpY2FsbW9tZW50c0BnbWFpbC5jb20iLCJmdWxsTmFtZSI6IkFua2l0IFNpbmdoIiwiaWF0IjoxNzI2NDA2NDE3LCJleHAiOjE3MjY0OTI4MTd9.Mzi7Y-VryJgDqzq6jK4Lyc6TovOfP_LM5EEvgJdI280";
+      const token =
+        "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJfaWQiOiI2NjU1ZDhmYmEwYzc4YzAzY2ZlZjJjZjMiLCJ1c2VybmFtZSI6ImFua2l0c2luZ2giLCJlbWFpbCI6InlvdXJtdXNpY2FsbW9tZW50c0BnbWFpbC5jb20iLCJmdWxsTmFtZSI6IkFua2l0IFNpbmdoIiwiaWF0IjoxNzI2NDA2NDE3LCJleHAiOjE3MjY0OTI4MTd9.Mzi7Y-VryJgDqzq6jK4Lyc6TovOfP_LM5EEvgJdI280";
 
-      // let socket;
-      // try {
-      //   socket = io("https://share-sphere-backend.vercel.app", {
-      //     auth: {
-      //       token: token,
-      //     },
-      //     timeout: 10000,
-      //   });
-      // } catch (error) {
-      //   console.error("Error initializing socket:", error);
-      //   document.getElementById("error").innerText =
-      //     "Failed to initialize socket connection";
-      // }
+      let socket;
+      try {
+        socket = io("https://share-sphere-backend.vercel.app", {
+          auth: {
+            token: token,
+          },
+          timeout: 10000,
+        });
+      } catch (error) {
+        console.error("Error initializing socket:", error);
+        document.getElementById("error").innerText =
+          "Failed to initialize socket connection";
+      }
 
-      // if (socket) {
-      //   socket.on("connect", () => {
-      //     console.log("Connected to server");
-      //   });
+      if (socket) {
+        socket.on("connect", () => {
+          console.log("Connected to server");
+        });
 
-      //   socket.on("connected", (data) => {
-      //     document.getElementById("id").innerText = data;
-      //     console.log("We are connected with ID:", data);
-      //   });
+        socket.on("connected", (data) => {
+          document.getElementById("id").innerText = data;
+          console.log("We are connected with ID:", data);
+        });
 
-      //   socket.on("connect_error", (error) => {
-      //     console.error("Connection error:", error);
-      //     document.getElementById("error").innerText =
-      //       "Connection error: " + error.message;
-      //   });
+        socket.on("connect_error", (error) => {
+          console.error("Connection error:", error);
+          document.getElementById("error").innerText =
+            "Connection error: " + error.message;
+        });
 
-      //   socket.on("socket-error", (data) => {
-      //     console.error("Socket error:", data);
-      //     document.getElementById("error").innerText =
-      //       data.errors?.message || "Unknown error";
-      //     document.getElementById("errorcode").innerText =
-      //       data.statusCode || "";
-      //   });
+        socket.on("socket-error", (data) => {
+          console.error("Socket error:", data);
+          document.getElementById("error").innerText =
+            data.errors?.message || "Unknown error";
+          document.getElementById("errorcode").innerText =
+            data.statusCode || "";
+        });
 
-      //   socket.on("message-received", (data) => {
-      //     console.log("Message received:", data);
-      //   });
+        socket.on("message-received", (data) => {
+          console.log("Message received:", data);
+        });
 
-      //   socket.on("new-chat", (data) => {
-      //     console.log("New chat created:", data);
-      //   });
+        socket.on("new-chat", (data) => {
+          console.log("New chat created:", data);
+        });
 
-      //   socket.on("disconnect", (reason) => {
-      //     console.log("Disconnected:", reason);
-      //   });
-      // }
+        socket.on("disconnect", (reason) => {
+          console.log("Disconnected:", reason);
+        });
+      }
     </script>
   </body>
 </html>
