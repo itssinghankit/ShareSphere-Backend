@@ -20,7 +20,7 @@ const __dirname = path.dirname(__filename)
 const app = express();
 const httpServer = createServer(app);
 
-const io = new Server(httpServer);
+const io = new Server(httpServer,{ origins: '*:*'});
 
 app.set("io", io); // using set method to mount the `io` instance on the app to avoid usage of `global`
 
