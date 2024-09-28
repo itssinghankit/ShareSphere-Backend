@@ -24,6 +24,7 @@ const chatMessageCommonAggregation = () => {
                             username: 1,
                             avatar: 1,
                             email: 1,
+                            fullName: 1
                         },
                     },
                 ],
@@ -54,17 +55,17 @@ const getAllMessages = asyncHandler(async (req, res) => {
 
     const messages = await chatMessageModel.aggregate([
         {
-          $match: {
-            chat:toObjectId(chatId),
-          },
+            $match: {
+                chat: toObjectId(chatId),
+            },
         },
         ...chatMessageCommonAggregation(),
         {
-          $sort: {
-            createdAt: -1,
-          },
+            $sort: {
+                createdAt: -1,
+            },
         },
-      ]);
+    ]);
 
     return res.status(200).json(new ApiResponse(200, messages || [], "Messages fetched successfully"))
 
