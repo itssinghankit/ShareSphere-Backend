@@ -21,11 +21,11 @@
 
     <script>
       const token =
-        "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJfaWQiOiI2NjU1ZDhmYmEwYzc4YzAzY2ZlZjJjZjMiLCJ1c2VybmFtZSI6ImFua2l0c2luZ2giLCJlbWFpbCI6InlvdXJtdXNpY2FsbW9tZW50c0BnbWFpbC5jb20iLCJmdWxsTmFtZSI6IkFua2l0IFNpbmdoIiwiaWF0IjoxNzI2NTAzNzA5LCJleHAiOjE3MjY1OTAxMDl9.VQsBhSqlnT_zpGnSYfAPXg9jlwGFCB8-jiUaDQVcmWw";
+        "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJfaWQiOiI2NjU1ZDhmYmEwYzc4YzAzY2ZlZjJjZjMiLCJ1c2VybmFtZSI6ImFua2l0c2luZ2giLCJlbWFpbCI6InlvdXJtdXNpY2FsbW9tZW50c0BnbWFpbC5jb20iLCJmdWxsTmFtZSI6IkFua2l0IFNpbmdoIiwiaWF0IjoxNzI3NTE0ODU3LCJleHAiOjE3Mjc2MDEyNTd9.5liZqcyLF5x83AydBQ1yWvz7_1zTSJl8NQjH8Wa9K24";
 
       let socket;
       try {
-        socket = io("https://sharesphere-backend.onrender.com/", {
+        socket = io("https://sharesphere-backend.onrender.com", {
           auth: {
             token: token,
           },
