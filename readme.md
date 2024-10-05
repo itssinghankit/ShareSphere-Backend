@@ -9,6 +9,7 @@ ShareSphere is a robust backend for a social media application, built with Node.
 - Post Creation and Management
 - Social Interactions (Like, Follow)
 - Image Upload and Storage
+- Chat with Friends
 - Pagination
 - Error Handling
 
@@ -18,42 +19,50 @@ ShareSphere is a robust backend for a social media application, built with Node.
 - Express.js
 - MongoDB (Database)
 - Aggregation Pipelines (Complex database operations)
+- Socket.io(long running perisistent networks)
 - JSON Web Token (Authentication)
 - Cloudinary (Image storage)
 - Multer (File upload handling)
 - Nodemailer (Email services)
 - Twilio (OTP services)
-- Cors (Cross-Origin Resource Sharing)
+- Cors (Cross-Origin Resource Sharing), and more
 
 ## Dependencies
 
 - express
 - mongoose
 - jsonwebtoken
+- joi
+- dotenv
+- cookie-parser
 - bcryptjs
 - cloudinary
 - multer
 - cors
 - nodemailer
 - twilio
-- http-errors
+- brcypt
+- http-errors, and more
 
 ## Routes
 
 The application includes the following main routes:
 
 ### Authentication
+
 - Signup
 - Signin
 - Send OTP
 - Verify OTP
 
 ### User Management
+
 - Save user details
 - Update user details
 - Update avatar
 
 ### Post Management
+
 - Create post
 - Show all posts
 - Show user's posts
@@ -61,28 +70,41 @@ The application includes the following main routes:
 - Like post
 
 ### Social Interactions
+
 - Show followers
 - Show following
 - Follow user
 
+### Chat Management
+
+- Show Friends
+- Create or Get one-one chat
+- Get all chats
+- Send message
+- Get all messages
+
 ## Setup and Installation
 
 1. Clone the repository:
+
    ```
    git clone https://github.com/itssinghankit/sharesphere-backend.git
    ```
 
 2. Navigate to the project directory:
+
    ```
    cd sharesphere-backend
    ```
 
 3. Install dependencies:
+
    ```
    npm install
    ```
 
 4. Create a `.env` file in the root directory and add the following environment variables:
+
    ```
    PORT=3000
    MONGODB_URI=your_mongodb_connection_string
