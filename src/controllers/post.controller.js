@@ -122,6 +122,13 @@ const getMyPosts = asyncHandler(async (req, res) => {
     res.status(200).json(new ApiResponse(200, posts, "These are your posts"));
 })
 
+const getAccountPosts = asyncHandler(async (req, res) => {
+    const currentUserId = req.params.accountId;
+    const posts = await postModel.find({ postedBy: currentUserId }).select("-postedBy").sort({ createdAt: -1 });
+
+    res.status(200).json(new ApiResponse(200, posts, "These are your posts"));
+})
+
 const likePost = asyncHandler(async (req, res) => {
 
     //validate post id
@@ -504,11 +511,11 @@ const searchUser = asyncHandler(async (req, res) => {
             { fullName: { $regex: search, $options: "i" } }
         ],
         //removing our self from search
-        _id:{$ne:req.user._id}
+        _id: { $ne: req.user._id }
     }).select("username fullName avatar isOnline")
 
-    if(users.length==0){
-        return  res.status(200).json(new ApiResponse(200, users, "No User Found"));
+    if (users.length == 0) {
+        return res.status(200).json(new ApiResponse(200, users, "No User Found"));
     }
 
     //for checking if we follow the post owner or not
@@ -530,7 +537,7 @@ const searchUser = asyncHandler(async (req, res) => {
     })
     )
 
-   return res.status(200).json(new ApiResponse(200, response, "Search done successfully"));
+    return res.status(200).json(new ApiResponse(200, response, "Search done successfully"));
 
 })
 
@@ -548,9 +555,9 @@ const comment = asyncHandler(async (req, res) => {
         throw createError.BadRequest("Comment not added");
     }
 
-    const increaseComment = await postModel.findByIdAndUpdate({_id:postId}, { $inc: { commentCount: 1 } });
+    const increaseComment = await postModel.findByIdAndUpdate({ _id: postId }, { $inc: { commentCount: 1 } });
 
-    if(!increaseComment){
+    if (!increaseComment) {
         throw createError.InternalServerError("Comment added by its count not updated.");
     }
 
@@ -564,7 +571,7 @@ const showComments = asyncHandler(async (req, res) => {
 
     const comments = await commentModel.find({ postId }).populate("commentedBy", "username avatar fullName _id").select("content commentedBy createdAt").sort({ createdAt: -1 });
 
-    if(!comments){
+    if (!comments) {
         throw createError.BadRequest("Check Post Id");
     }
 
@@ -575,4 +582,4 @@ const showComments = asyncHandler(async (req, res) => {
     res.status(200).json(new ApiResponse(200, comments, "All comments fetched"));
 })
 
-export { createPost, getAllPosts, getMyPosts, likePost, followAccount, viewAccount, viewAccountFollowers, viewAccountFollowing, savePost, showSavedPost, searchUser, comment,showComments };
+export { createPost, getAllPosts, getMyPosts, likePost, followAccount, viewAccount, viewAccountFollowers, viewAccountFollowing, savePost, showSavedPost, searchUser, comment, showComments, getAccountPosts };
