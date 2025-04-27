@@ -12,6 +12,7 @@ import postRouter from "./routes/post.route.js";
 import chatRouter from "./routes/chat/chat.route.js";
 import { initializeSocketIO } from "./socket/index.js";
 import messageRouter from "./routes/chat/message.route.js";
+import notificationRouter from "./routes/notification/notification.route.js";
 
 const __filename = fileURLToPath(import.meta.url)
 const __dirname = path.dirname(__filename)
@@ -64,6 +65,9 @@ app.use("/api/v1/chat", chatRouter);
 
 //message routes
 app.use("/api/v1/message", messageRouter);
+
+//notification routes
+app.use("/api/v1/notification", notificationRouter);
 
 //error generation
 app.use(async (req, res, next) => {

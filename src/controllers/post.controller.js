@@ -511,7 +511,8 @@ const searchUser = asyncHandler(async (req, res) => {
             { fullName: { $regex: search, $options: "i" } }
         ],
         //removing our self from search
-        _id: { $ne: req.user._id }
+        _id: { $ne: req.user._id },
+        isVerified: true,
     }).select("username fullName avatar isOnline")
 
     if (users.length == 0) {

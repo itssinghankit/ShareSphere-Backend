@@ -13,6 +13,7 @@ postRouter.get("/", (req, res) => {
 postRouter.post("/create-post", verifyJWT, upload.array("postImages", 10), createPost)
 postRouter.get("/get-all-posts", verifyJWT, getAllPosts)
 postRouter.get("/get-my-posts", verifyJWT, getMyPosts)
+postRouter.get("/get-account-posts/:accountId", verifyJWT, getMyPosts)
 postRouter.post("/like-post/:postId", verifyJWT, likePost)
 postRouter.post("/follow-account/:accountId", verifyJWT, followAccount)
 postRouter.get("/view-account/:accountId", verifyJWT, viewAccount)
