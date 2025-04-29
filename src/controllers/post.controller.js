@@ -12,6 +12,10 @@ import mongoose from "mongoose";
 import savePostModel from "../models/savePost.model.js";
 import commentModel from "../models/comment.model.js";
 import createHttpError from "http-errors";
+import { saveAndSendNotification } from "./notification/notification.controller.js";
+import { NotificationTypes } from "../constants/notificationTypes.js";
+import fcmtokenModel from "../models/notification/fcmtoken.model.js";
+import sendNotification from "../utils/NotificationSender.js";
 
 //helper function to convert string to object id
 const toObjectId = (id) => mongoose.Types.ObjectId.isValid(id) ? new mongoose.Types.ObjectId(id) : null;
@@ -158,6 +162,19 @@ const likePost = asyncHandler(async (req, res) => {
 
     if (!like) {
         throw createError.BadRequest();
+    }
+
+    //now save and send  notification 
+    const receiver =await postModel.findOne({_id:postId}).select("postedBy") 
+    const receiverId = receiver.postedBy //the person whose post is this
+
+    //finding the required token
+    const notificationReceiver= await fcmtokenModel.findOne({userId:receiverId}) 
+
+    if(notificationReceiver){
+        const title ="You got a like!!"
+        const body = "liked your photo"
+        await saveAndSendNotification(userId, postId, receiverId,NotificationTypes.LIKE,notificationReceiver.token,title,body)
     }
 
     //increase the like count of the post

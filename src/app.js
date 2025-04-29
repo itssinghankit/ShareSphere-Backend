@@ -13,6 +13,8 @@ import chatRouter from "./routes/chat/chat.route.js";
 import { initializeSocketIO } from "./socket/index.js";
 import messageRouter from "./routes/chat/message.route.js";
 import notificationRouter from "./routes/notification/notification.route.js";
+import admin from "firebase-admin"
+import serviceAccount from "./firebase/serviceAccountKey.json" assert { type: "json" };
 
 const __filename = fileURLToPath(import.meta.url)
 const __dirname = path.dirname(__filename)
@@ -45,6 +47,11 @@ app.use(cookieParser());
 
 //initializing socket io for chat
 initializeSocketIO(io)
+
+//firebase admin initialization
+admin.initializeApp({
+    credential: admin.credential.cert(serviceAccount)
+});
 
 //routes
 app.get("/", (req, res) => {

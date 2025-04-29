@@ -1,7 +1,7 @@
 import { Timestamp } from "mongodb";
 import mongoose from "mongoose";
 
-const fcmTokenSchema = mongoose.Schema({
+const fcmTokenSchema = new mongoose.Schema({
     token:{
         type:String,
         required:true
