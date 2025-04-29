@@ -22,4 +22,4 @@ const commentSchema = new mongoose.Schema({
 });
 
 //by default it take name of commentModel 
-export default mongoose.model("Comment", commentSchema);
+export default mongoose.model("Comment", commentSchema);  
