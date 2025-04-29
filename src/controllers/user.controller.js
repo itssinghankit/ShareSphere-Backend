@@ -477,7 +477,9 @@ const forgetPassVerify = asyncHandler(async (req, res) => {
 
 const isUsernameAvailable = asyncHandler(async (req, res) => {
     await joiIsUsernameAvailable.validateAsync(req.params).catch(error => { throw createError.BadRequest(error.details[0].message) });
+    
     const user = await userModel.findOne({ username: req.params.username });
+
     if (!user) {
         return res.status(200).json(new ApiResponse(200, { "available": true }, "Username Available"));
     }
