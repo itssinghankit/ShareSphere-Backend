@@ -8,6 +8,7 @@ import admin from "firebase-admin"
 import notificationModel from "../../models/notification/notification.model.js";
 import postModel from "../../models/post.model.js";
 import sendNotification from "../../utils/NotificationSender.js";
+import { NotificationTypes } from "../../constants/notificationTypes.js";
 
 
 const saveFcmToken = asyncHandler(async(req,res)=>{
@@ -116,4 +117,41 @@ const saveAndSendNotification = async (interactorId,postId,receiverId,category,t
 
 }
 
-export {saveFcmToken,sendNotificationCheck,saveAndSendNotification}
+const getAllNotification =asyncHandler(async(req,res)=>{
+    const userId =req.user._id
+    const notifications = await notificationModel.find({receiverId:userId}).sort({createdAt:-1})
+
+    if(!notifications){
+        return res.status(200).json(new ApiResponse(200,[],"No notifications found"))
+    }
+
+    //notification found so check its type
+    const notificationList = notifications.map((notification)=>{
+        let message =""
+        switch(notification.category){
+            case NotificationTypes.LIKE:
+                message=`${notification.interactorName} (${notification.interactorUsername}) liked your post`
+                break;
+            case NotificationTypes.COMMENT:
+                message=`${notification.interactorName} (${notification.interactorUsername}) commented on your post`
+                break;
+            case NotificationTypes.FOLLOW:
+                message=`${notification.interactorName} (${notification.interactorUsername}) started following you`
+                break;
+            case NotificationTypes.CREATEPOST:
+                message=`${notification.interactorName} (${notification.interactorUsername}) posted a new post`
+                break;    
+            case NotificationTypes.GENERAL:
+                message=""
+        }
+        return {
+           ...notification.toObject(),
+            message:message
+        }
+    })
+
+    return res.status(200).json(new ApiResponse(200,notificationList,"Notifications found"))
+
+})
+
+export {saveFcmToken,sendNotificationCheck,saveAndSendNotification,getAllNotification}
