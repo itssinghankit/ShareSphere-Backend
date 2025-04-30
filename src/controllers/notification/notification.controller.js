@@ -130,16 +130,16 @@ const getAllNotification =asyncHandler(async(req,res)=>{
         let message =""
         switch(notification.category){
             case NotificationTypes.LIKE:
-                message=`${notification.interactorName} (${notification.interactorUsername}) liked your post`
+                message=`${notification.interactorName} (@${notification.interactorUsername}) liked your post`
                 break;
             case NotificationTypes.COMMENT:
-                message=`${notification.interactorName} (${notification.interactorUsername}) commented on your post`
+                message=`${notification.interactorName} (@${notification.interactorUsername}) commented on your post`
                 break;
             case NotificationTypes.FOLLOW:
-                message=`${notification.interactorName} (${notification.interactorUsername}) started following you`
+                message=`${notification.interactorName} (@${notification.interactorUsername}) started following you`
                 break;
             case NotificationTypes.CREATEPOST:
-                message=`${notification.interactorName} (${notification.interactorUsername}) posted a new post`
+                message=`${notification.interactorName} (@${notification.interactorUsername}) posted a new post`
                 break;    
             case NotificationTypes.GENERAL:
                 message=""
